@@ -2,12 +2,15 @@ FROM php:8.2-fpm-alpine
 
 # Install system dependencies
 RUN apk add --no-cache \
+    autoconf \
     freetype-dev \
+    g++ \
     icu-dev \
     libjpeg-turbo-dev \
     libpng-dev \
     libwebp-dev \
     libzip-dev \
+    make \
     oniguruma-dev \
     zip \
     unzip \
@@ -31,7 +34,8 @@ RUN docker-php-ext-configure gd \
 
 # Install Redis extension via PECL
 RUN pecl install redis \
-    && docker-php-ext-enable redis
+    && docker-php-ext-enable redis \
+    && apk del autoconf g++ make
 
 # Install Composer
 COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
