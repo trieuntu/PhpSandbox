@@ -10,12 +10,13 @@
 
 <!-- Filter -->
 <form method="GET" class="bg-white border border-gray-200 rounded-lg p-4 mb-4 flex gap-3 flex-wrap">
+    @php($availableActionTypes = $actionTypes ?? $actions ?? collect())
     <input type="text" name="search" value="{{ request('search') }}"
         placeholder="Tìm theo tên, action..."
         class="flex-1 min-w-48 border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
     <select name="action" class="border border-gray-300 rounded px-3 py-2 text-sm">
         <option value="">Tất cả hành động</option>
-        @foreach($actionTypes as $type)
+        @foreach($availableActionTypes as $type)
         <option value="{{ $type }}" {{ request('action') === $type ? 'selected' : '' }}>{{ $type }}</option>
         @endforeach
     </select>
