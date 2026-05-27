@@ -24,7 +24,7 @@ RUN composer install \
     --prefer-dist
 
 # Stage 3: Production PHP-FPM image
-FROM php:8.2-fpm-alpine
+FROM php:8.4-fpm-alpine
 
 # System dependencies (autoconf needed for PECL builds)
 RUN apk add --no-cache \
