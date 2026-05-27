@@ -41,6 +41,11 @@ if [[ ! -f "${COMPOSE_FILE}" ]]; then
   exit 1
 fi
 
+if [[ ! -f "package.json" ]]; then
+  echo "Missing package.json."
+  exit 1
+fi
+
 APP_KEY_LINE="$(grep -E '^APP_KEY=' "${ENV_FILE}" || true)"
 if [[ -z "${APP_KEY_LINE}" || "${APP_KEY_LINE}" == "APP_KEY=" ]]; then
   echo "APP_KEY is empty in ${ENV_FILE}."
@@ -83,6 +88,17 @@ if [[ "${SKIP_PULL}" -eq 0 ]]; then
 else
   echo "==> Skip source pull"
 fi
+
+if ! command -v npm >/dev/null 2>&1; then
+  echo "npm command not found. Install Node.js before deploying frontend assets."
+  exit 1
+fi
+
+echo "==> Install frontend dependencies"
+npm ci
+
+echo "==> Build frontend assets"
+npm run build
 
 echo "==> Build and start core services"
 compose up -d --build --force-recreate --no-deps app queue nginx

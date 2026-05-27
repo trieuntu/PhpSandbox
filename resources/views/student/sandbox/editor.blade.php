@@ -132,7 +132,7 @@ const multifileExample = @json($multifileExample);
 require.config({ paths: { vs: 'https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.44.0/min/vs' } });
 require(['vs/editor/editor.main'], function() {
     monacoEditor = monaco.editor.create(document.getElementById('editor'), {
-        value: '<?php\n\n// Viết code PHP của bạn ở đây\necho "Hello, World!";\n',
+        value: '\x3C?php\n\n// Viết code PHP của bạn ở đây\necho "Hello, World!";\n',
         language: 'php',
         theme: 'vs',
         fontSize: 14,
@@ -154,10 +154,10 @@ function sandboxApp(contextType, contextId) {
         init() {},
 
         clearCode() {
-            this.files = [{ name: 'index.php', content: '<?php\n\n' }];
+            this.files = [{ name: 'index.php', content: '\x3C?php\n\n' }];
             this.activeIdx = 0;
             this.renamingIdx = -1;
-            if (monacoEditor) monacoEditor.setValue('<?php\n\n');
+            if (monacoEditor) monacoEditor.setValue('\x3C?php\n\n');
             this.status = '';
             this.errors = '';
             this.previewUrl = '';
