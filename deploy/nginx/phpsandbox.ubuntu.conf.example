@@ -6,7 +6,7 @@ server {
     client_max_body_size 10M;
 
     location / {
-        proxy_pass http://127.0.0.1:8080;
+        proxy_pass http://127.0.0.1:8081;
         proxy_http_version 1.1;
 
         proxy_set_header Host $host;
@@ -24,13 +24,13 @@ server {
     location = /favicon.ico {
         access_log off;
         log_not_found off;
-        proxy_pass http://127.0.0.1:8080;
+        proxy_pass http://127.0.0.1:8081;
     }
 
     location = /robots.txt {
         access_log off;
         log_not_found off;
-        proxy_pass http://127.0.0.1:8080;
+        proxy_pass http://127.0.0.1:8081;
     }
 }
 
@@ -46,7 +46,7 @@ server {
 #     client_max_body_size 10M;
 #
 #     location / {
-#         proxy_pass http://127.0.0.1:8080;
+#         proxy_pass http://127.0.0.1:8081;
 #         proxy_http_version 1.1;
 #
 #         proxy_set_header Host $host;

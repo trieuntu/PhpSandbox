@@ -6,7 +6,7 @@ services:
       context: ./docker/nginx
       dockerfile: Dockerfile
     ports:
-      - "127.0.0.1:8080:80"
+      - "127.0.0.1:${NGINX_HOST_PORT:-8081}:80"
     volumes:
       - ./docker/nginx/conf.d:/etc/nginx/conf.d:ro
       - app_public:/var/www/html/public:ro
