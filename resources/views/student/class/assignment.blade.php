@@ -16,7 +16,7 @@ if ($lastSub) {
         );
         $initialEditorFiles = array_values($initialEditorFiles);
     } else {
-        $initialEditorFiles = [['name' => 'index.php', 'content' => $lastSub->code ?? "<?php\n\n// Viết code PHP của bạn ở đây\necho 'Hello, World!';\n"]];
+        $initialEditorFiles = [['name' => 'index.php', 'content' => $lastSub->code ?? "\x3C?php\n\n// Viết code PHP của bạn ở đây\necho 'Hello, World!';\n"]];
     }
 }
 ?>
@@ -151,7 +151,7 @@ const initialEditorFiles = @json($initialEditorFiles);
 require.config({ paths: { vs: 'https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.44.0/min/vs' } });
 require(['vs/editor/editor.main'], function() {
     const firstContent = initialEditorFiles ? initialEditorFiles[0].content
-        : '<?php\n\n// Viết code PHP của bạn ở đây\necho \'Hello, World!\';\n';
+        : '\x3C?php\n\n// Viết code PHP của bạn ở đây\necho \'Hello, World!\';\n';
     monacoEditor = monaco.editor.create(document.getElementById('editor'), {
         value: firstContent,
         language: 'php',
@@ -173,7 +173,7 @@ function restoreSubmission(filesJson, codeString) {
         sandboxInstance.renamingIdx = -1;
         if (monacoEditor) monacoEditor.setValue(arr[0].content);
     } else {
-        const code = codeString || '<?php\n\n';
+        const code = codeString || '\x3C?php\n\n';
         sandboxInstance.files = [{ name: 'index.php', content: code }];
         sandboxInstance.activeIdx = 0;
         sandboxInstance.renamingIdx = -1;
