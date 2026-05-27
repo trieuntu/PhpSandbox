@@ -1,0 +1,54 @@
+# Git
+.git
+.gitignore
+.gitattributes
+
+# Dev environment
+.env
+.env.*
+!.env.example
+
+# Node
+node_modules/
+
+# Vendor (will be rebuilt in Docker)
+# (we exclude vendor to keep context small; composer install runs in build)
+# vendor/ — keep this commented; composer builder stage installs it
+
+# Tests
+tests/
+phpunit.xml
+.phpunit.result.cache
+
+# Dev Docker files
+docker-compose.yml
+docker-compose.prod.yml
+
+# IDE/Editor
+.vscode/
+.idea/
+*.swp
+*.swo
+.DS_Store
+Thumbs.db
+
+# Logs
+storage/logs/*.log
+
+# Cache
+storage/framework/cache/
+storage/framework/sessions/
+storage/framework/views/
+bootstrap/cache/*.php
+
+# Documentation
+*.md
+!README.md
+
+# CI/CD
+.github/
+.gitlab-ci.yml
+
+# Dev scripts
+deploy.sh
+Makefile

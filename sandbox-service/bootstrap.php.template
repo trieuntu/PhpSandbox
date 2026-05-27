@@ -1,0 +1,35 @@
+<?php
+// === SANDBOX BOOTSTRAP — tự động inject, không thể xóa ===
+set_time_limit(5);
+
+// Restore cookie state from the calling Laravel app
+foreach (json_decode('__COOKIE_JSON__', true) ?? [] as $k => $v) {
+    $_COOKIE[$k] = $v;
+}
+
+// Setup session persistence per-execution context
+$_sandbox_session_path = '__SESSION_DIR__/sessions/';
+if (!is_dir($_sandbox_session_path)) {
+    @mkdir($_sandbox_session_path, 0700, true);
+}
+session_save_path($_sandbox_session_path);
+
+// Inject per-student DB connection (only when credentials are provided)
+if ('__STUDENT_DB__' !== '' && '__STUDENT_DB_USER__' !== '') {
+    try {
+        $db = new PDO(
+            'mysql:host=' . ($_ENV['DB_HOST'] ?? 'mysql') . ';port=3306;dbname=__STUDENT_DB__;charset=utf8mb4',
+            '__STUDENT_DB_USER__',
+            '__STUDENT_DB_PASS__'
+        );
+        $db->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+        $db->setAttribute(PDO::ATTR_DEFAULT_FETCH_MODE, PDO::FETCH_ASSOC);
+    } catch (PDOException $e) {
+        // DB not available — $db remains undefined; student code should handle gracefully
+    }
+}
+
+// Capture all output produced by student code
+ob_start();
+
+// === CODE SINH VIÊN BẮT ĐẦU ===

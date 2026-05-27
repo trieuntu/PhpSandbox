@@ -1,0 +1,93 @@
+# =============================================================================
+# PHP Sandbox – Production App Image
+# Multi-stage build: Node.js assets → Composer deps → Production PHP-FPM
+# =============================================================================
+
+# Stage 1: Build front-end assets with Node
+FROM node:20-alpine AS node-builder
+WORKDIR /app
+COPY package.json package-lock.json ./
+RUN npm ci --include=dev
+COPY . .
+RUN npm run build
+
+# Stage 2: Install Composer dependencies (no dev)
+FROM composer:2 AS composer-builder
+WORKDIR /app
+COPY composer.json composer.lock ./
+RUN composer install \
+    --no-dev \
+    --no-interaction \
+    --no-plugins \
+    --no-scripts \
+    --optimize-autoloader \
+    --prefer-dist
+
+# Stage 3: Production PHP-FPM image
+FROM php:8.2-fpm-alpine
+
+# System dependencies (autoconf needed for PECL builds)
+RUN apk add --no-cache \
+    autoconf \
+    freetype-dev \
+    g++ \
+    icu-dev \
+    libjpeg-turbo-dev \
+    libpng-dev \
+    libwebp-dev \
+    libzip-dev \
+    make \
+    oniguruma-dev \
+    zip \
+    unzip \
+    curl
+
+# PHP extensions
+RUN docker-php-ext-configure gd \
+        --with-freetype \
+        --with-jpeg \
+        --with-webp \
+    && docker-php-ext-install -j$(nproc) \
+        pdo_mysql \
+        bcmath \
+        gd \
+        intl \
+        mbstring \
+        opcache \
+        pcntl \
+        zip
+
+# Redis PECL extension
+RUN pecl install redis && docker-php-ext-enable redis \
+    && apk del autoconf g++ make
+
+# Copy PHP config
+COPY docker/php/php.ini      /usr/local/etc/php/conf.d/99-custom.ini
+COPY docker/php/php-fpm.conf /usr/local/etc/php-fpm.d/zz-custom.conf
+
+WORKDIR /var/www/html
+
+# Copy application source code
+COPY . .
+
+# Copy built artifacts from previous stages
+COPY --from=node-builder     /app/public/build ./public/build
+COPY --from=composer-builder /app/vendor        ./vendor
+
+# Copy production entrypoint
+COPY docker/php/entrypoint.prod.sh /usr/local/bin/docker-entrypoint
+RUN chmod +x /usr/local/bin/docker-entrypoint
+
+# Create required Laravel directories with correct permissions
+RUN mkdir -p storage/framework/{cache,sessions,views} \
+             storage/app/public \
+             bootstrap/cache \
+    && chown -R www-data:www-data /var/www/html \
+    && chmod -R 775 storage bootstrap/cache
+
+USER www-data
+
+EXPOSE 9000
+
+ENTRYPOINT ["docker-entrypoint"]
+CMD ["php-fpm"]

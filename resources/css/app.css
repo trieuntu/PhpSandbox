@@ -1,0 +1,10 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Alpine.js cloak — hide x-cloak elements until Alpine initializes */
+[x-cloak] { display: none !important; }
+
+/* Sandbox editor heights */
+.sandbox-editor { min-height: 400px; }
+.sandbox-preview { min-height: 400px; }

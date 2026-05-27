@@ -1,0 +1,33 @@
+# =============================================================================
+# PHP Sandbox – Production Sandbox Execution Service
+# Bakes in sandbox-service PHP code. No volume mount needed on target server.
+# =============================================================================
+
+FROM php:8.2-cli-alpine
+
+# System + PHP extensions
+RUN apk add --no-cache oniguruma-dev libzip-dev && \
+    docker-php-ext-install -j$(nproc) pdo_mysql mbstring
+
+# Copy restrictive php.ini
+COPY docker/sandbox/php-sandbox.ini /usr/local/etc/php/conf.d/php-sandbox.ini
+
+# Copy entrypoint
+COPY docker/sandbox/entrypoint.sh /usr/local/bin/entrypoint.sh
+RUN chmod +x /usr/local/bin/entrypoint.sh
+
+# Create non-root sandbox user
+RUN addgroup -g 1001 sandbox && \
+    adduser -u 1001 -G sandbox -s /bin/sh -D sandbox
+
+# Bake in sandbox service code
+COPY sandbox-service/ /var/www/sandbox/
+RUN chown -R sandbox:sandbox /var/www/sandbox
+
+# Sandbox temp execution directory (overridden by tmpfs in docker-compose)
+RUN mkdir -p /tmp/sandbox_exec && chown sandbox:sandbox /tmp/sandbox_exec
+
+WORKDIR /var/www/sandbox
+USER sandbox
+EXPOSE 8080
+ENTRYPOINT ["/usr/local/bin/entrypoint.sh"]
