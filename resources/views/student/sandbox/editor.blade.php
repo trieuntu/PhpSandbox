@@ -75,6 +75,20 @@
                     <pre x-text="errors" class="text-xs text-red-600 overflow-auto max-h-28 font-mono"></pre>
                 </div>
             </div>
+            <!-- Quick Examples -->
+            <div class="pt-2 flex-shrink-0 border-t border-gray-100">
+                <p class="text-xs text-gray-500 mb-1.5">Ví dụ nhanh:</p>
+                <div class="flex gap-2 flex-wrap">
+                    <button @click="loadExample('hello')" class="text-xs border border-gray-300 px-2 py-1 rounded hover:bg-gray-50">Hello World</button>
+                    <button @click="loadExample('array')" class="text-xs border border-gray-300 px-2 py-1 rounded hover:bg-gray-50">Arrays</button>
+                    <button @click="loadExample('function')" class="text-xs border border-gray-300 px-2 py-1 rounded hover:bg-gray-50">Functions</button>
+                    <button @click="loadExample('html')" class="text-xs border border-gray-300 px-2 py-1 rounded hover:bg-gray-50">HTML Output</button>
+                    <button @click="loadExample('multifile')" class="flex items-center gap-1 text-xs border border-blue-300 px-2 py-1 rounded hover:bg-blue-50 text-blue-600">
+                        <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 12.75V12A2.25 2.25 0 014.5 9.75h15A2.25 2.25 0 0121.75 12v.75m-8.69-6.44l-2.12-2.12a1.5 1.5 0 00-1.061-.44H4.5A2.25 2.25 0 002.25 6v12a2.25 2.25 0 002.25 2.25h15A2.25 2.25 0 0021.75 18V9a2.25 2.25 0 00-2.25-2.25h-5.379a1.5 1.5 0 01-1.06-.44z" /></svg>
+                        Multi-file
+                    </button>
+                </div>
+            </div>
         </div>
 
         <!-- Preview Panel -->
@@ -88,21 +102,6 @@
             </div>
             <iframe id="preview-frame" sandbox="allow-forms allow-scripts allow-same-origin"
                 x-bind:src="previewUrl || 'about:blank'"></iframe>
-        </div>
-    </div>
-
-    <!-- Quick Examples -->
-    <div class="pt-2 flex-shrink-0">
-        <p class="text-xs text-gray-500 mb-2">Ví dụ nhanh:</p>
-        <div class="flex gap-2 flex-wrap">
-            <button @click="loadExample('hello')" class="text-xs border border-gray-300 px-2 py-1 rounded hover:bg-gray-50">Hello World</button>
-            <button @click="loadExample('array')" class="text-xs border border-gray-300 px-2 py-1 rounded hover:bg-gray-50">Arrays</button>
-            <button @click="loadExample('function')" class="text-xs border border-gray-300 px-2 py-1 rounded hover:bg-gray-50">Functions</button>
-            <button @click="loadExample('html')" class="text-xs border border-gray-300 px-2 py-1 rounded hover:bg-gray-50">HTML Output</button>
-            <button @click="loadExample('multifile')" class="flex items-center gap-1 text-xs border border-blue-300 px-2 py-1 rounded hover:bg-blue-50 text-blue-600">
-                <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 12.75V12A2.25 2.25 0 014.5 9.75h15A2.25 2.25 0 0121.75 12v.75m-8.69-6.44l-2.12-2.12a1.5 1.5 0 00-1.061-.44H4.5A2.25 2.25 0 002.25 6v12a2.25 2.25 0 002.25 2.25h15A2.25 2.25 0 0021.75 18V9a2.25 2.25 0 00-2.25-2.25h-5.379a1.5 1.5 0 01-1.06-.44z" /></svg>
-                Multi-file
-            </button>
         </div>
     </div>
 </div>
