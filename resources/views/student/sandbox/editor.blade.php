@@ -67,7 +67,7 @@
         <div class="col-span-3 sandbox-panel">
             @include('partials._filetabs_html')
             <!-- Monaco Editor + Error overlay -->
-            <div class="editor-wrap" style="position:relative;">
+            <div class="editor-wrap" style="position:relative; overflow:hidden;">
                 <div id="editor"></div>
                 <!-- Errors: absolute overlay at bottom of editor -->
                 <div x-show="errors" x-cloak
