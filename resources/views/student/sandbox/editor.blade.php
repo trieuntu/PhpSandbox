@@ -5,7 +5,7 @@
 @endpush
 @section('content')
 <div x-data="sandboxApp('free', null)" x-init="init()"
-     style="height: calc(100vh - 112px); display: flex; flex-direction: column; overflow: hidden;">
+     style="height: calc(100vh - 112px); display: flex; flex-direction: column;">
     <div class="flex justify-between items-center mb-3 flex-shrink-0">
         <div>
             <h1 class="text-xl font-bold text-gray-800 flex items-center gap-2">
@@ -69,8 +69,13 @@
             <div class="editor-wrap">
                 <div id="editor"></div>
             </div>
+            <!-- Errors -->
+            <div x-show="errors" x-cloak class="mt-1 bg-red-50 border border-red-200 rounded p-2 flex-shrink-0">
+                <p class="text-xs font-semibold text-red-700 mb-1">Lỗi PHP:</p>
+                <pre x-text="errors" class="text-xs text-red-600 overflow-auto max-h-24 font-mono"></pre>
+            </div>
             <!-- Quick Examples -->
-            <div class="pt-1.5 pb-1 flex-shrink-0 border-t border-gray-100">
+            <div class="pt-1.5 pb-1 flex-shrink-0 border-t border-gray-100 mt-1">
                 <p class="text-xs text-gray-500 mb-1">Ví dụ nhanh:</p>
                 <div class="flex gap-2 flex-wrap">
                     <button @click="loadExample('hello')" class="text-xs border border-gray-300 px-2 py-1 rounded hover:bg-gray-50">Hello World</button>
@@ -92,15 +97,9 @@
                     <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M12 21a9.004 9.004 0 008.716-6.747M12 21a9.004 9.004 0 01-8.716-6.747M12 21c2.485 0 4.5-4.03 4.5-9S14.485 3 12 3m0 18c-2.485 0-4.5-4.03-4.5-9S9.515 3 12 3m0 0a8.997 8.997 0 017.843 4.582M12 3a8.997 8.997 0 00-7.843 4.582m15.686 0A11.953 11.953 0 0112 10.5c-2.998 0-5.74-1.1-7.843-2.918m15.686 0A8.959 8.959 0 0121 12c0 .778-.099 1.533-.284 2.253m0 0A17.919 17.919 0 0112 16.5c-3.162 0-6.133-.815-8.716-2.247m0 0A9.015 9.015 0 013 12c0-1.605.42-3.113 1.157-4.418" /></svg>
                     Output Preview
                 </span>
-                <button @click="previewUrl = ''" x-show="previewUrl && !errors" x-cloak class="text-gray-400 hover:text-gray-600 leading-none">&times;</button>
-            </div>
-            <!-- Error display in preview panel -->
-            <div x-show="errors" x-cloak class="flex-1 bg-red-50 border border-red-200 border-t-0 rounded-b p-3 overflow-auto">
-                <p class="text-xs font-semibold text-red-700 mb-2">Lỗi PHP:</p>
-                <pre x-text="errors" class="text-xs text-red-600 font-mono whitespace-pre-wrap"></pre>
+                <button @click="previewUrl = ''" x-show="previewUrl" x-cloak class="text-gray-400 hover:text-gray-600 leading-none">&times;</button>
             </div>
             <iframe id="preview-frame" sandbox="allow-forms allow-scripts allow-same-origin"
-                x-show="!errors"
                 x-bind:src="previewUrl || 'about:blank'"></iframe>
         </div>
     </div>
