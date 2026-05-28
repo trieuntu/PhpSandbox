@@ -4,8 +4,9 @@
 @include('partials._multifile_css')
 @endpush
 @section('content')
-<div x-data="sandboxApp('free', null)" x-init="init()">
-    <div class="flex justify-between items-center mb-4">
+<div x-data="sandboxApp('free', null)" x-init="init()"
+     style="height: calc(100vh - 112px); display: flex; flex-direction: column; overflow: hidden;">
+    <div class="flex justify-between items-center mb-3 flex-shrink-0">
         <div>
             <h1 class="text-xl font-bold text-gray-800 flex items-center gap-2">
                 <svg class="w-5 h-5 text-blue-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true">
@@ -41,7 +42,7 @@
     </div>
 
     <!-- Status Bar -->
-    <div class="flex items-center gap-2 mb-3 flex-wrap">
+    <div class="flex items-center gap-2 mb-2 flex-wrap flex-shrink-0">
         <span x-show="status === 'queued' || status === 'running'" x-cloak
             class="flex items-center gap-1 text-sm text-yellow-700 bg-yellow-100 px-2 py-1 rounded">
             <svg class="w-3.5 h-3.5 animate-spin flex-shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0l3.181 3.183a8.25 8.25 0 0013.803-3.7M4.031 9.865a8.25 8.25 0 0113.803-3.7l3.181 3.182m0-4.991v4.99" /></svg>
@@ -61,7 +62,7 @@
         <span x-text="executionTime" class="text-xs text-gray-400"></span>
     </div>
 
-    <div class="grid grid-cols-5 gap-4" style="height: calc(100vh - 220px); min-height: 500px;">
+    <div class="grid grid-cols-5 gap-4 flex-1 min-h-0">
         <!-- Editor Panel -->
         <div class="col-span-3 sandbox-panel">
             @include('partials._filetabs_html')
@@ -91,7 +92,7 @@
     </div>
 
     <!-- Quick Examples -->
-    <div class="mt-4">
+    <div class="pt-2 flex-shrink-0">
         <p class="text-xs text-gray-500 mb-2">Ví dụ nhanh:</p>
         <div class="flex gap-2 flex-wrap">
             <button @click="loadExample('hello')" class="text-xs border border-gray-300 px-2 py-1 rounded hover:bg-gray-50">Hello World</button>
