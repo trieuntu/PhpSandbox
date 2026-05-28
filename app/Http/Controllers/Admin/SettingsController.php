@@ -14,9 +14,11 @@ class SettingsController extends Controller {
     public function update(Request $request) {
         $data = $request->validate([
             'registration_enabled' => 'nullable',
-            'inactivity_timeout_minutes' => 'required|integer|in:5,10,15,30,60',
-            'max_execution_time_seconds' => 'required|integer|min:1|max:30',
-            'sandbox_memory_limit_mb' => 'required|integer|min:16|max:256',
+            'session_timeout_minutes' => 'nullable|integer|min:1|max:480',
+            'inactivity_warning_seconds' => 'nullable|integer|min:10|max:300',
+            'sandbox_timeout_seconds' => 'nullable|integer|min:1|max:60',
+            'sandbox_memory_mb' => 'nullable|integer|min:8|max:512',
+            'sandbox_service_url' => 'nullable|url',
             'smtp_host' => 'nullable|string|max:255',
             'smtp_port' => 'nullable|integer',
             'smtp_user' => 'nullable|string|max:255',
