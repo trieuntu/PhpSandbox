@@ -68,12 +68,11 @@
             <!-- Monaco Editor -->
             <div class="editor-wrap">
                 <div id="editor"></div>
-            </div>
-
-            <!-- Errors -->
-            <div x-show="errors" x-cloak class="mt-2 bg-red-50 border border-red-200 rounded p-3 flex-shrink-0">
-                <p class="text-sm font-medium text-red-700 mb-1">Lỗi PHP:</p>
-                <pre x-text="errors" class="text-xs text-red-600 overflow-auto max-h-32 font-mono"></pre>
+                <!-- Errors -->
+                <div x-show="errors" x-cloak class="bg-red-50 border-t border-red-200 p-3 flex-shrink-0">
+                    <p class="text-sm font-medium text-red-700 mb-1">Lỗi PHP:</p>
+                    <pre x-text="errors" class="text-xs text-red-600 overflow-auto max-h-28 font-mono"></pre>
+                </div>
             </div>
         </div>
 
