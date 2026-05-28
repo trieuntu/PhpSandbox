@@ -19,7 +19,7 @@ class HomeController extends Controller {
             $q->whereNull('class_id')->orWhereIn('class_id', $classIds);
         })->orderByDesc('is_pinned')->orderByDesc('created_at')->take(10)->with('creator')->get();
         
-        $classes = \App\Models\Classes::whereIn('id', $classIds)->where('is_active', true)->with('assignments', 'exams')->get();
+        $classes = \App\Models\Classes::whereIn('id', $classIds)->where('is_active', true)->withCount('assignments', 'exams')->get();
         
         $openExams = Exam::whereIn('class_id', $classIds)
             ->where('is_active', true)

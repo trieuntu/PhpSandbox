@@ -11,10 +11,10 @@ class ClassController extends Controller {
     public function index() {
         $user = Auth::user();
         if ($user->role === 'admin') {
-            $classes = Classes::where('is_active', true)->with('assignments', 'exams')->get();
+            $classes = Classes::where('is_active', true)->withCount('assignments', 'exams')->get();
         } else {
             $classIds = ClassEnrollment::where('user_id', $user->id)->pluck('class_id');
-            $classes = Classes::whereIn('id', $classIds)->where('is_active', true)->with('assignments', 'exams')->get();
+            $classes = Classes::whereIn('id', $classIds)->where('is_active', true)->withCount('assignments', 'exams')->get();
         }
         return view('student.class.index', compact('classes'));
     }

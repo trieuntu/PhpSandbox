@@ -17,11 +17,11 @@
             @endif
             <div class="mt-4 grid grid-cols-2 gap-2 text-sm">
                 <div class="bg-gray-50 rounded p-2 text-center">
-                    <p class="font-semibold text-gray-700">{{ $class->assignments->count() }}</p>
+                    <p class="font-semibold text-gray-700">{{ $class->assignments_count }}</p>
                     <p class="text-gray-500 text-xs">Bài tập</p>
                 </div>
                 <div class="bg-gray-50 rounded p-2 text-center">
-                    <p class="font-semibold text-gray-700">{{ $class->exams->count() }}</p>
+                    <p class="font-semibold text-gray-700">{{ $class->exams_count }}</p>
                     <p class="text-gray-500 text-xs">Bài thi</p>
                 </div>
             </div>

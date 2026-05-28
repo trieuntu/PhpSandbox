@@ -2,6 +2,7 @@
 namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Cache;
 use App\Models\ActivityLog;
 use App\Models\User;
 
@@ -40,7 +41,9 @@ class LogController extends Controller {
         
         $logs = $query->paginate(50);
         $users = User::orderBy('name')->get();
-        $actions = ActivityLog::distinct()->pluck('action')->sort()->values();
+        $actions = Cache::remember('log_action_types', 600, fn () =>
+            ActivityLog::distinct()->pluck('action')->sort()->values()
+        );
         
         return view('admin.logs.index', compact('logs', 'users', 'actions') + ['actionTypes' => $actions]);
     }
