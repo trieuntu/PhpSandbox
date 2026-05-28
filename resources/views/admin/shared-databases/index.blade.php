@@ -93,8 +93,9 @@
                 </svg>
                 <div class="text-sm text-blue-700">
                     <p class="font-medium mb-1">Cách sinh viên truy cập shared database</p>
-                    <p>Trong sandbox, sinh viên dùng <code class="bg-blue-100 px-1 rounded">$sharedDbs['slug']</code> — đây là kết nối PDO đã cấu hình sẵn.</p>
-                    <p class="mt-1">Ví dụ: <code class="bg-blue-100 px-1 rounded">$rows = $sharedDbs['shop']->query("SELECT * FROM products")->fetchAll();</code></p>
+                    <p><strong>PDO (OOP):</strong> <code class="bg-blue-100 px-1 rounded">$sharedDbs['slug']</code> — PDO object</p>
+                    <p class="mt-1"><strong>mysqli (thủ tục):</strong> <code class="bg-blue-100 px-1 rounded">$sharedConns['slug']</code> — mysqli connection</p>
+                    <p class="mt-1">Ví dụ: <code class="bg-blue-100 px-1 rounded">$r = mysqli_query($sharedConns['shop'], "SELECT * FROM products"); while($row = mysqli_fetch_assoc($r)) {...}</code></p>
                 </div>
             </div>
         </div>

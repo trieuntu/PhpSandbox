@@ -29,23 +29,31 @@ if ('__STUDENT_DB__' !== '' && '__STUDENT_DB_USER__' !== '') {
     }
 }
 
-// Inject shared databases as $sharedDbs['slug'] => PDO
-$sharedDbs = [];
+// Inject shared databases as $sharedDbs['slug'] => PDO (OOP) and $sharedConns['slug'] => mysqli (procedural)
+$sharedDbs   = [];
+$sharedConns = [];
 foreach (json_decode('__SHARED_DBS_JSON__', true) ?? [] as $_sdb) {
+    $_sdb_host = $_ENV['DB_HOST'] ?? 'mysql';
+    $_sdb_name = 'sandbox_shared_' . $_sdb['slug'];
+    // PDO (OOP style)
     try {
         $_sdb_pdo = new PDO(
-            'mysql:host=' . ($_ENV['DB_HOST'] ?? 'mysql') . ';port=3306;dbname=sandbox_shared_' . $_sdb['slug'] . ';charset=utf8mb4',
+            "mysql:host={$_sdb_host};port=3306;dbname={$_sdb_name};charset=utf8mb4",
             $_sdb['user'],
             $_sdb['pass']
         );
         $_sdb_pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
         $_sdb_pdo->setAttribute(PDO::ATTR_DEFAULT_FETCH_MODE, PDO::FETCH_ASSOC);
         $sharedDbs[$_sdb['slug']] = $_sdb_pdo;
-    } catch (PDOException $e) {
-        // shared DB unavailable — skip silently
+    } catch (PDOException $e) { /* unavailable */ }
+    // mysqli (procedural style)
+    $_sdb_conn = @mysqli_connect($_sdb_host, $_sdb['user'], $_sdb['pass'], $_sdb_name, 3306);
+    if ($_sdb_conn) {
+        mysqli_set_charset($_sdb_conn, 'utf8mb4');
+        $sharedConns[$_sdb['slug']] = $_sdb_conn;
     }
 }
-unset($_sdb, $_sdb_pdo);
+unset($_sdb, $_sdb_pdo, $_sdb_conn, $_sdb_host, $_sdb_name);
 
 // Capture all output produced by student code
 ob_start();

@@ -146,16 +146,28 @@
             {{-- Usage example --}}
             <div class="mt-4 bg-gray-900 rounded-xl p-5 text-sm">
                 <p class="text-gray-400 text-xs mb-3 font-medium">Ví dụ sử dụng trong sandbox (PHP)</p>
-                <pre class="text-green-400 text-xs leading-relaxed overflow-x-auto"><code>// Kết nối PDO đã được inject tự động
+                <pre class="text-green-400 text-xs leading-relaxed overflow-x-auto"><code>// ── Cách 1: PDO (OOP) ──────────────────────────────
 $pdo = $sharedDbs['{{ $sharedDatabase->slug }}'];
-
-// Truy vấn
 $rows = $pdo->query("SELECT * FROM ...")->fetchAll();
 
-// Với prepared statement
 $stmt = $pdo->prepare("SELECT * FROM ... WHERE id = ?");
 $stmt->execute([$id]);
-$row = $stmt->fetch();</code></pre>
+$row = $stmt->fetch();
+
+// ── Cách 2: mysqli (thủ tục / procedural) ──────────
+$conn = $sharedConns['{{ $sharedDatabase->slug }}'];
+
+$result = mysqli_query($conn, "SELECT * FROM ...");
+while ($row = mysqli_fetch_assoc($result)) {
+    echo $row['ten_cot'];
+}
+
+// Với tham số (prepared statement)
+$stmt = mysqli_prepare($conn, "SELECT * FROM ... WHERE id = ?");
+mysqli_stmt_bind_param($stmt, 'i', $id);
+mysqli_stmt_execute($stmt);
+$result = mysqli_stmt_get_result($stmt);
+$row = mysqli_fetch_assoc($result);</code></pre>
             </div>
         </div>
     </div>

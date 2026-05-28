@@ -106,26 +106,31 @@ class SandboxService {
     }
 
     /**
-     * Generate PHP code that populates $sharedDbs for local-fallback execution.
-     * Returns a <?php ... ?> block that injects real PDO connections.
+     * Generate PHP code that populates $sharedDbs (PDO) and $sharedConns (mysqli)
+     * for local-fallback execution.
      */
     private function buildSharedDbsBootstrap(): string
     {
-        $dbsJson = json_encode($this->getSharedDbCredentials());
+        $dbs     = $this->getSharedDbCredentials();
         $dbHost  = config('sandbox.db_host', env('DB_HOST', '127.0.0.1'));
+        $dbsExported = var_export($dbs, true);
 
         return '<?php' . "\n"
-            . '$sharedDbs = [];' . "\n"
-            . '$__sdb_host = ' . var_export($dbHost, true) . ';' . "\n"
-            . 'foreach (' . var_export(json_decode($dbsJson, true), true) . ' as $__sdb) {' . "\n"
+            . '$sharedDbs   = [];' . "\n"
+            . '$sharedConns = [];' . "\n"
+            . '$__sdb_host  = ' . var_export($dbHost, true) . ';' . "\n"
+            . 'foreach (' . $dbsExported . ' as $__sdb) {' . "\n"
+            . '    $__sdb_name = "sandbox_shared_{$__sdb[\'slug\']}";' . "\n"
             . '    try {' . "\n"
-            . '        $__sdb_pdo = new PDO("mysql:host={$__sdb_host};port=3306;dbname=sandbox_shared_{$__sdb[\'slug\']};charset=utf8mb4", $__sdb[\'user\'], $__sdb[\'pass\']);' . "\n"
+            . '        $__sdb_pdo = new PDO("mysql:host={$__sdb_host};port=3306;dbname={$__sdb_name};charset=utf8mb4", $__sdb[\'user\'], $__sdb[\'pass\']);' . "\n"
             . '        $__sdb_pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);' . "\n"
             . '        $__sdb_pdo->setAttribute(PDO::ATTR_DEFAULT_FETCH_MODE, PDO::FETCH_ASSOC);' . "\n"
             . '        $sharedDbs[$__sdb[\'slug\']] = $__sdb_pdo;' . "\n"
-            . '    } catch (PDOException $e) { /* unavailable — skip */ }' . "\n"
+            . '    } catch (PDOException $e) {}' . "\n"
+            . '    $__sdb_conn = @mysqli_connect($__sdb_host, $__sdb[\'user\'], $__sdb[\'pass\'], $__sdb_name, 3306);' . "\n"
+            . '    if ($__sdb_conn) { mysqli_set_charset($__sdb_conn, \'utf8mb4\'); $sharedConns[$__sdb[\'slug\']] = $__sdb_conn; }' . "\n"
             . '}' . "\n"
-            . 'unset($__sdb, $__sdb_pdo, $__sdb_host);' . "\n"
+            . 'unset($__sdb, $__sdb_pdo, $__sdb_conn, $__sdb_host, $__sdb_name);' . "\n"
             . '?>' . "\n";
     }
 
