@@ -76,7 +76,8 @@ class Executor
     private function buildCode(string $execDir): string
     {
         $bootstrap  = file_get_contents(__DIR__ . '/bootstrap.php.template');
-        $cookieJson = json_encode($this->input['cookie_data'] ?? []);
+        $cookieJson   = json_encode($this->input['cookie_data'] ?? []);
+        $sharedDbsJson = json_encode($this->input['shared_dbs'] ?? []);
 
         $bootstrap = str_replace(
             [
@@ -87,6 +88,7 @@ class Executor
                 '__STUDENT_DB_USER__',
                 '__STUDENT_DB_PASS__',
                 '__SESSION_DIR__',
+                '__SHARED_DBS_JSON__',
             ],
             [
                 $this->input['user_id']      ?? 'unknown',
@@ -96,6 +98,7 @@ class Executor
                 $this->input['db_user']  ?? '',
                 $this->input['db_pass']  ?? '',
                 $execDir,
+                addslashes($sharedDbsJson),
             ],
             $bootstrap
         );

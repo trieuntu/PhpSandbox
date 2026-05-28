@@ -1,5 +1,6 @@
 <?php
 namespace App\Services;
+use App\Models\SharedDatabase;
 use App\Models\User;
 use App\Models\SandboxState;
 use Illuminate\Support\Facades\Http;
@@ -34,6 +35,7 @@ class SandboxService {
             'session_data' => $state?->session_data ?? [],
             'cookie_data' => $state?->cookie_data ?? [],
             'max_execution_time' => config('sandbox.max_execution_time', 5),
+            'shared_dbs' => $this->getSharedDbCredentials(),
         ];
 
         try {
@@ -217,5 +219,30 @@ class SandboxService {
                 'last_used_at' => now(),
             ]
         );
+    }
+
+    /**
+     * Build the shared_dbs credentials array for the execution payload.
+     * Only includes DBs that are not set to 'none' permission.
+     */
+    private function getSharedDbCredentials(): array
+    {
+        try {
+            return SharedDatabase::where('permission', '!=', 'none')
+                ->get()
+                ->map(fn($sdb) => [
+                    'slug' => $sdb->slug,
+                    'user' => $sdb->permission === 'readwrite'
+                        ? config('sandbox.shared_rw_user', 'sbx_shared_rw')
+                        : config('sandbox.shared_ro_user', 'sbx_shared_ro'),
+                    'pass' => $sdb->permission === 'readwrite'
+                        ? config('sandbox.shared_rw_pass')
+                        : config('sandbox.shared_ro_pass'),
+                ])
+                ->values()
+                ->toArray();
+        } catch (\Exception $e) {
+            return [];
+        }
     }
 }

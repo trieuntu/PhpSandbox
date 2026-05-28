@@ -16,6 +16,7 @@ use App\Http\Controllers\Admin\SubmissionController;
 use App\Http\Controllers\Admin\AnnouncementController;
 use App\Http\Controllers\Admin\LogController;
 use App\Http\Controllers\Admin\SettingsController;
+use App\Http\Controllers\Admin\SharedDatabaseController;
 
 // Auth
 Route::get('/login', [LoginController::class, 'showLoginForm'])->name('login')->middleware('guest');
@@ -113,4 +114,15 @@ Route::prefix('admin')->name('admin.')->middleware(['auth', 'admin'])->group(fun
     Route::get('/settings', [SettingsController::class, 'index'])->name('settings.index');
     Route::post('/settings', [SettingsController::class, 'update'])->name('settings.update');
     Route::post('/settings/test-email', [SettingsController::class, 'testEmail'])->name('settings.test-email');
+
+    // Shared Databases
+    Route::get('/shared-databases', [SharedDatabaseController::class, 'index'])->name('shared-databases.index');
+    Route::get('/shared-databases/create', [SharedDatabaseController::class, 'create'])->name('shared-databases.create');
+    Route::post('/shared-databases', [SharedDatabaseController::class, 'store'])->name('shared-databases.store');
+    Route::get('/shared-databases/{sharedDatabase}', [SharedDatabaseController::class, 'show'])->name('shared-databases.show');
+    Route::get('/shared-databases/{sharedDatabase}/edit', [SharedDatabaseController::class, 'edit'])->name('shared-databases.edit');
+    Route::put('/shared-databases/{sharedDatabase}', [SharedDatabaseController::class, 'update'])->name('shared-databases.update');
+    Route::delete('/shared-databases/{sharedDatabase}', [SharedDatabaseController::class, 'destroy'])->name('shared-databases.destroy');
+    Route::post('/shared-databases/{sharedDatabase}/reimport', [SharedDatabaseController::class, 'reimport'])->name('shared-databases.reimport');
+    Route::post('/shared-databases/{sharedDatabase}/refresh', [SharedDatabaseController::class, 'refresh'])->name('shared-databases.refresh');
 });

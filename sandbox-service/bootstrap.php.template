@@ -29,6 +29,24 @@ if ('__STUDENT_DB__' !== '' && '__STUDENT_DB_USER__' !== '') {
     }
 }
 
+// Inject shared databases as $sharedDbs['slug'] => PDO
+$sharedDbs = [];
+foreach (json_decode('__SHARED_DBS_JSON__', true) ?? [] as $_sdb) {
+    try {
+        $_sdb_pdo = new PDO(
+            'mysql:host=' . ($_ENV['DB_HOST'] ?? 'mysql') . ';port=3306;dbname=sandbox_shared_' . $_sdb['slug'] . ';charset=utf8mb4',
+            $_sdb['user'],
+            $_sdb['pass']
+        );
+        $_sdb_pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+        $_sdb_pdo->setAttribute(PDO::ATTR_DEFAULT_FETCH_MODE, PDO::FETCH_ASSOC);
+        $sharedDbs[$_sdb['slug']] = $_sdb_pdo;
+    } catch (PDOException $e) {
+        // shared DB unavailable — skip silently
+    }
+}
+unset($_sdb, $_sdb_pdo);
+
 // Capture all output produced by student code
 ob_start();
 

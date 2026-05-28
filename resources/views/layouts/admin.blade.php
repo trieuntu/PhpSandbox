@@ -77,6 +77,13 @@
                 </svg>
                 Cài đặt
             </a>
+            <a href="{{ route('admin.shared-databases.index') }}"
+               class="flex items-center gap-2 px-3 py-2 rounded text-sm {{ request()->routeIs('admin.shared-databases.*') ? 'bg-gray-700 text-white' : 'text-gray-300 hover:bg-gray-700 hover:text-white' }}">
+                <svg class="w-4 h-4 flex-shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M20.25 6.375c0 2.278-3.694 4.125-8.25 4.125S3.75 8.653 3.75 6.375m16.5 0c0-2.278-3.694-4.125-8.25-4.125S3.75 4.097 3.75 6.375m16.5 0v11.25c0 2.278-3.694 4.125-8.25 4.125s-8.25-1.847-8.25-4.125V6.375m16.5 2.625c0 2.278-3.694 4.125-8.25 4.125s-8.25-1.847-8.25-4.125m16.5 2.625c0 2.278-3.694 4.125-8.25 4.125s-8.25-1.847-8.25-4.125" />
+                </svg>
+                Shared DB
+            </a>
             <hr class="border-gray-700 my-2">
             <a href="{{ route('student.home') }}" class="flex items-center gap-2 px-3 py-2 rounded text-sm text-gray-400 hover:bg-gray-700 hover:text-white">
                 <svg class="w-4 h-4 flex-shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true">
