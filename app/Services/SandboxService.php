@@ -105,12 +105,38 @@ class SandboxService {
             . ' ?>' . "\n";
     }
 
+    /**
+     * Generate PHP code that populates $sharedDbs for local-fallback execution.
+     * Returns a <?php ... ?> block that injects real PDO connections.
+     */
+    private function buildSharedDbsBootstrap(): string
+    {
+        $dbsJson = json_encode($this->getSharedDbCredentials());
+        $dbHost  = config('sandbox.db_host', env('DB_HOST', '127.0.0.1'));
+
+        return '<?php' . "\n"
+            . '$sharedDbs = [];' . "\n"
+            . '$__sdb_host = ' . var_export($dbHost, true) . ';' . "\n"
+            . 'foreach (' . var_export(json_decode($dbsJson, true), true) . ' as $__sdb) {' . "\n"
+            . '    try {' . "\n"
+            . '        $__sdb_pdo = new PDO("mysql:host={$__sdb_host};port=3306;dbname=sandbox_shared_{$__sdb[\'slug\']};charset=utf8mb4", $__sdb[\'user\'], $__sdb[\'pass\']);' . "\n"
+            . '        $__sdb_pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);' . "\n"
+            . '        $__sdb_pdo->setAttribute(PDO::ATTR_DEFAULT_FETCH_MODE, PDO::FETCH_ASSOC);' . "\n"
+            . '        $sharedDbs[$__sdb[\'slug\']] = $__sdb_pdo;' . "\n"
+            . '    } catch (PDOException $e) { /* unavailable — skip */ }' . "\n"
+            . '}' . "\n"
+            . 'unset($__sdb, $__sdb_pdo, $__sdb_host);' . "\n"
+            . '?>' . "\n";
+    }
+
     private function executeLocally(User $user, string $code, string $contextType, ?int $contextId, array $postData = [], array $files = [], string $targetFile = ''): array {
         $memLimit    = config('sandbox.memory_limit_mb', 64) . 'M';
         $maxTime     = (int) config('sandbox.max_execution_time', 5);
         $php         = PHP_BINARY;
         $disabledFns = implode(',', config('sandbox.disabled_functions', []));
         $initLine    = $this->buildInitLine($postData);
+        $sharedDbsBootstrap = $this->buildSharedDbsBootstrap();
+        $preamble    = $initLine . $sharedDbsBootstrap;
         $tmpDir      = null;
 
         if (!empty($files)) {
@@ -137,7 +163,7 @@ class SandboxService {
 
             // Write a runner that prepends init then includes the entry file
             $runnerFile = $tmpDir . '__sb_run__.php';
-            file_put_contents($runnerFile, $initLine . file_get_contents($tmpDir . $entryName));
+            file_put_contents($runnerFile, $preamble . file_get_contents($tmpDir . $entryName));
 
             $cmd = sprintf(
                 'cd %s && %s -d memory_limit=%s -d max_execution_time=%d -d disable_functions=%s %s',
@@ -151,7 +177,7 @@ class SandboxService {
         } else {
             // Single-file mode (backward compat)
             $tmpFile = tempnam(sys_get_temp_dir(), 'phpsandbox_') . '.php';
-            file_put_contents($tmpFile, $initLine . $code);
+            file_put_contents($tmpFile, $preamble . $code);
 
             $cmd = sprintf(
                 '%s -d memory_limit=%s -d max_execution_time=%d -d disable_functions=%s %s',
