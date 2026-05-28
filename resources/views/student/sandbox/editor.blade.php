@@ -66,18 +66,23 @@
         <!-- Editor Panel -->
         <div class="col-span-3 sandbox-panel">
             @include('partials._filetabs_html')
-            <!-- Monaco Editor -->
-            <div class="editor-wrap">
+            <!-- Monaco Editor + Error overlay -->
+            <div class="editor-wrap" style="position:relative;">
                 <div id="editor"></div>
+                <!-- Errors: absolute overlay at bottom of editor -->
+                <div x-show="errors" x-cloak
+                     style="position:absolute;bottom:0;left:0;right:0;z-index:10;max-height:40%;"
+                     class="bg-red-50 border-t-2 border-red-300 px-3 py-2">
+                    <div class="flex items-center justify-between mb-1">
+                        <p class="text-xs font-semibold text-red-700">Lỗi PHP:</p>
+                        <button @click="errors=''" class="text-red-400 hover:text-red-600 text-xs leading-none">&times; Đóng</button>
+                    </div>
+                    <pre x-text="errors" class="text-xs text-red-600 overflow-auto font-mono" style="max-height:80px;"></pre>
+                </div>
             </div>
-            <!-- Errors (between editor and examples) -->
-            <div x-show="errors" x-cloak class="bg-red-50 border border-red-200 rounded mt-1 p-2 flex-shrink-0">
-                <p class="text-xs font-medium text-red-700 mb-1">Lỗi PHP:</p>
-                <pre x-text="errors" class="text-xs text-red-600 overflow-auto max-h-24 font-mono"></pre>
-            </div>
-            <!-- Quick Examples -->
-            <div class="pt-2 flex-shrink-0 border-t border-gray-100">
-                <p class="text-xs text-gray-500 mb-1.5">Ví dụ nhanh:</p>
+            <!-- Quick Examples: always at bottom, never affected by errors -->
+            <div class="pt-1.5 pb-1 flex-shrink-0 border-t border-gray-100">
+                <p class="text-xs text-gray-500 mb-1">Ví dụ nhanh:</p>
                 <div class="flex gap-2 flex-wrap">
                     <button @click="loadExample('hello')" class="text-xs border border-gray-300 px-2 py-1 rounded hover:bg-gray-50">Hello World</button>
                     <button @click="loadExample('array')" class="text-xs border border-gray-300 px-2 py-1 rounded hover:bg-gray-50">Arrays</button>
