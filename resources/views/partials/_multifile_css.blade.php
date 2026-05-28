@@ -9,5 +9,5 @@
 .editor-wrap { border:1px solid #e5e7eb; border-radius:0 0 4px 4px; flex:1; display:flex; flex-direction:column; min-height:0; }
 #editor { flex:1; border:0; border-radius:0 0 4px 4px; min-height:0; }
 #preview-frame { flex:1; border:1px solid #e5e7eb; border-radius:0 0 4px 4px; background:#fff; min-height:0; }
-.sandbox-panel { display:flex; flex-direction:column; overflow:hidden; }
+.sandbox-panel { display:flex; flex-direction:column; min-height:0; }
 </style>
