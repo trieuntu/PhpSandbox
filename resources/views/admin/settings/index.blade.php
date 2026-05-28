@@ -7,7 +7,7 @@
 </div>
 
 <form method="POST" action="{{ route('admin.settings.update') }}">
-    @csrf @method('PUT')
+    @csrf
     <div class="space-y-6">
 
         <!-- General Settings -->
