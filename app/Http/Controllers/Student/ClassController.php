@@ -9,8 +9,13 @@ use App\Models\Submission;
 
 class ClassController extends Controller {
     public function index() {
-        $classIds = ClassEnrollment::where('user_id', Auth::id())->pluck('class_id');
-        $classes = Classes::whereIn('id', $classIds)->where('is_active', true)->with('assignments', 'exams')->get();
+        $user = Auth::user();
+        if ($user->role === 'admin') {
+            $classes = Classes::where('is_active', true)->with('assignments', 'exams')->get();
+        } else {
+            $classIds = ClassEnrollment::where('user_id', $user->id)->pluck('class_id');
+            $classes = Classes::whereIn('id', $classIds)->where('is_active', true)->with('assignments', 'exams')->get();
+        }
         return view('student.class.index', compact('classes'));
     }
     
@@ -39,6 +44,7 @@ class ClassController extends Controller {
     }
     
     private function authorizeEnrollment(Classes $class): void {
+        if (Auth::user()->role === 'admin') return;
         $enrolled = ClassEnrollment::where('class_id', $class->id)->where('user_id', Auth::id())->exists();
         if (!$enrolled) abort(403, 'You are not enrolled in this class.');
     }

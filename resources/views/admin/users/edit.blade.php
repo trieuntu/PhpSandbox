@@ -41,6 +41,21 @@
                     </select>
                 </div>
 
+                <div>
+                    <label class="flex items-center gap-2 cursor-pointer">
+                        <input type="hidden" name="is_active" value="0">
+                        <input type="checkbox" name="is_active" value="1" id="is_active"
+                            {{ old('is_active', $user->is_active) ? 'checked' : '' }}
+                            {{ auth()->id() === $user->id ? 'disabled' : '' }}
+                            class="rounded border-gray-300 text-blue-600">
+                        <span class="text-sm font-medium text-gray-700">Tài khoản đang hoạt động</span>
+                    </label>
+                    @if(auth()->id() === $user->id)
+                        <input type="hidden" name="is_active" value="1">
+                        <p class="text-xs text-gray-400 mt-1">Không thể tự vô hiệu hóa tài khoản của chính mình.</p>
+                    @endif
+                </div>
+
                 <div class="border-t border-gray-100 pt-4">
                     <p class="text-sm text-gray-500 mb-3">Để trống nếu không muốn đổi mật khẩu</p>
                     <div class="space-y-3">

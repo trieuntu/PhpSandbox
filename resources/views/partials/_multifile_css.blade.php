@@ -6,7 +6,8 @@
 .file-tab:not(.active):hover { background:#e9eaf0; }
 .file-tab .del-btn { opacity:0; font-size:10px; line-height:1; color:#9ca3af; cursor:pointer; }
 .file-tab:hover .del-btn { opacity:1; }
-.editor-wrap { border:1px solid #e5e7eb; border-radius:0 0 4px 4px; }
-#editor { height: {{ $editorHeight ?? '480px' }}; border:0; border-radius:0 0 4px 4px; }
-#preview-frame { width: 100%; height: {{ $previewHeight ?? '520px' }}; border: 1px solid #e5e7eb; border-radius: 4px; background: #fff; }
+.editor-wrap { border:1px solid #e5e7eb; border-radius:0 0 4px 4px; flex:1; display:flex; flex-direction:column; min-height:0; }
+#editor { flex:1; border:0; border-radius:0 0 4px 4px; min-height:0; }
+#preview-frame { flex:1; border:1px solid #e5e7eb; border-radius:0 0 4px 4px; background:#fff; min-height:0; }
+.sandbox-panel { display:flex; flex-direction:column; }
 </style>

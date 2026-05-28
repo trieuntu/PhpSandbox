@@ -77,7 +77,12 @@ class UserController extends Controller {
             unset($data['password']);
         }
         
-        $data['is_active'] = $request->boolean('is_active');
+        // Prevent admin from deactivating their own account
+        if (auth()->id() === $user->id) {
+            $data['is_active'] = true;
+        } else {
+            $data['is_active'] = $request->boolean('is_active');
+        }
         $user->update($data);
         ActivityLogger::log('user_updated', "Admin updated user: {$user->email}");
         return redirect()->route('admin.users.index')->with('success', 'User updated successfully.');

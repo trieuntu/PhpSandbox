@@ -24,32 +24,62 @@
 </div>
 
 <!-- Navigation -->
-<nav class="bg-white border-b border-gray-200 shadow-sm">
+<nav class="bg-white border-b border-gray-200 shadow-sm" x-data="{ mobileOpen: false }">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div class="flex justify-between h-16">
+            <!-- Logo + desktop links -->
             <div class="flex items-center">
-                <a href="{{ route('student.home') }}" class="flex items-center gap-2 text-blue-600 font-bold text-xl">
-                    <svg class="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true">
+                <a href="{{ route('student.home') }}" class="flex items-center gap-2 text-blue-600 font-bold text-lg sm:text-xl">
+                    <svg class="w-6 h-6 flex-shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true">
                         <path stroke-linecap="round" stroke-linejoin="round" d="M17.25 6.75L22.5 12l-5.25 5.25m-10.5 0L1.5 12l5.25-5.25m7.5-3l-4.5 16.5" />
                     </svg>
-                    PHP Sandbox
+                    <span class="hidden sm:inline">PHP Sandbox</span>
                 </a>
-                <div class="ml-6 flex space-x-4">
-                    <a href="{{ route('student.home') }}" class="text-gray-600 hover:text-gray-900 px-3 py-2 text-sm font-medium {{ request()->routeIs('student.home') ? 'text-blue-600 border-b-2 border-blue-600' : '' }}">Dashboard</a>
-                    <a href="{{ route('student.classes.index') }}" class="text-gray-600 hover:text-gray-900 px-3 py-2 text-sm font-medium {{ request()->routeIs('student.classes.*') ? 'text-blue-600 border-b-2 border-blue-600' : '' }}">Lớp học</a>
-                    <a href="{{ route('student.sandbox.editor') }}" class="text-gray-600 hover:text-gray-900 px-3 py-2 text-sm font-medium {{ request()->routeIs('student.sandbox.*') ? 'text-blue-600 border-b-2 border-blue-600' : '' }}">Sandbox</a>
+                <div class="hidden md:flex ml-6 space-x-1">
+                    <a href="{{ route('student.home') }}" class="px-3 py-2 text-sm font-medium rounded-md transition {{ request()->routeIs('student.home') ? 'text-blue-600 bg-blue-50' : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50' }}">Dashboard</a>
+                    <a href="{{ route('student.classes.index') }}" class="px-3 py-2 text-sm font-medium rounded-md transition {{ request()->routeIs('student.classes.*') ? 'text-blue-600 bg-blue-50' : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50' }}">Lớp học</a>
+                    <a href="{{ route('student.sandbox.editor') }}" class="px-3 py-2 text-sm font-medium rounded-md transition {{ request()->routeIs('student.sandbox.*') ? 'text-blue-600 bg-blue-50' : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50' }}">Sandbox</a>
                 </div>
             </div>
-            <div class="flex items-center space-x-4">
-                <span class="text-sm text-gray-600">{{ auth()->user()->name }}</span>
+
+            <!-- Desktop right -->
+            <div class="hidden md:flex items-center gap-3">
+                <span class="text-sm text-gray-600 max-w-[160px] truncate">{{ auth()->user()->name }}</span>
                 @if(auth()->user()->role === 'admin')
-                    <a href="{{ route('admin.dashboard') }}" class="text-sm text-blue-600 hover:text-blue-800">Admin Panel</a>
+                    <a href="{{ route('admin.dashboard') }}" class="text-sm text-blue-600 hover:text-blue-800 font-medium">Admin Panel</a>
                 @endif
                 <form method="POST" action="{{ route('logout') }}">
                     @csrf
-                    <button type="submit" class="text-sm text-red-600 hover:text-red-800">Đăng xuất</button>
+                    <button type="submit" class="text-sm text-red-600 hover:text-red-800 font-medium">Đăng xuất</button>
                 </form>
             </div>
+
+            <!-- Mobile hamburger -->
+            <div class="flex items-center md:hidden">
+                <button @click="mobileOpen = !mobileOpen" class="p-2 rounded-md text-gray-500 hover:text-gray-700 hover:bg-gray-100 transition" aria-label="Menu">
+                    <svg x-show="!mobileOpen" class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5"/></svg>
+                    <svg x-show="mobileOpen" x-cloak class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Mobile menu -->
+    <div x-show="mobileOpen" x-cloak class="md:hidden border-t border-gray-100 bg-white">
+        <div class="px-4 pt-2 pb-3 space-y-1">
+            <a href="{{ route('student.home') }}" class="block px-3 py-2 text-sm font-medium rounded-md {{ request()->routeIs('student.home') ? 'text-blue-600 bg-blue-50' : 'text-gray-600 hover:bg-gray-50' }}">Dashboard</a>
+            <a href="{{ route('student.classes.index') }}" class="block px-3 py-2 text-sm font-medium rounded-md {{ request()->routeIs('student.classes.*') ? 'text-blue-600 bg-blue-50' : 'text-gray-600 hover:bg-gray-50' }}">Lớp học</a>
+            <a href="{{ route('student.sandbox.editor') }}" class="block px-3 py-2 text-sm font-medium rounded-md {{ request()->routeIs('student.sandbox.*') ? 'text-blue-600 bg-blue-50' : 'text-gray-600 hover:bg-gray-50' }}">Sandbox</a>
+        </div>
+        <div class="px-4 pb-3 border-t border-gray-100 pt-3 flex flex-col gap-2">
+            <span class="text-sm text-gray-600 font-medium truncate">{{ auth()->user()->name }}</span>
+            @if(auth()->user()->role === 'admin')
+                <a href="{{ route('admin.dashboard') }}" class="text-sm text-blue-600 hover:text-blue-800 font-medium">Admin Panel</a>
+            @endif
+            <form method="POST" action="{{ route('logout') }}">
+                @csrf
+                <button type="submit" class="text-sm text-red-600 hover:text-red-800 font-medium">Đăng xuất</button>
+            </form>
         </div>
     </div>
 </nav>

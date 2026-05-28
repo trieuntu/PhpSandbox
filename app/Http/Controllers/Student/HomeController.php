@@ -9,7 +9,11 @@ use App\Models\Exam;
 class HomeController extends Controller {
     public function index() {
         $user = Auth::user();
-        $classIds = ClassEnrollment::where('user_id', $user->id)->pluck('class_id');
+        $isAdmin = $user->role === 'admin';
+
+        $classIds = $isAdmin
+            ? \App\Models\Classes::where('is_active', true)->pluck('id')
+            : ClassEnrollment::where('user_id', $user->id)->pluck('class_id');
         
         $announcements = Announcement::where(function($q) use ($classIds) {
             $q->whereNull('class_id')->orWhereIn('class_id', $classIds);

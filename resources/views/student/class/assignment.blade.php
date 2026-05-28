@@ -1,7 +1,7 @@
 @extends('layouts.app')
 @section('title', $assignment->title)
 @push('styles')
-@include('partials._multifile_css', ['editorHeight' => '500px', 'previewHeight' => '500px'])
+@include('partials._multifile_css')
 @endpush
 @section('content')
 <?php
@@ -61,16 +61,16 @@ if ($lastSub) {
     </div>
     @endif
 
-    <div class="grid grid-cols-5 gap-4">
+    <div class="grid grid-cols-5 gap-4" style="height: calc(100vh - 260px); min-height: 460px;">
         <!-- Editor Panel -->
-        <div class="col-span-3">
+        <div class="col-span-3 sandbox-panel">
             @include('partials._filetabs_html')
             <div class="editor-wrap">
                 <div id="editor"></div>
             </div>
 
             <!-- Status -->
-            <div class="mt-2 flex items-center gap-2 flex-wrap">
+            <div class="mt-2 flex items-center gap-2 flex-wrap flex-shrink-0">
                 <span x-show="status === 'queued' || status === 'running'" x-cloak
                     class="flex items-center gap-1 text-sm text-yellow-700 bg-yellow-100 px-2 py-1 rounded">
                     <svg class="w-3.5 h-3.5 animate-spin" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0l3.181 3.183a8.25 8.25 0 0013.803-3.7M4.031 9.865a8.25 8.25 0 0113.803-3.7l3.181 3.182m0-4.991v4.99" /></svg>
@@ -91,15 +91,15 @@ if ($lastSub) {
             </div>
 
             <!-- PHP Errors -->
-            <div x-show="errors" x-cloak class="mt-2 bg-red-50 border border-red-200 rounded p-3">
+            <div x-show="errors" x-cloak class="mt-2 bg-red-50 border border-red-200 rounded p-3 flex-shrink-0">
                 <p class="text-sm font-medium text-red-700 mb-1">Lỗi PHP:</p>
-                <pre x-text="errors" class="text-xs text-red-600 overflow-auto max-h-40 font-mono"></pre>
+                <pre x-text="errors" class="text-xs text-red-600 overflow-auto max-h-32 font-mono"></pre>
             </div>
         </div>
 
         <!-- Preview Panel -->
-        <div class="col-span-2">
-            <div class="bg-gray-100 text-gray-500 text-xs px-3 py-1 rounded-t flex items-center gap-1">
+        <div class="col-span-2 sandbox-panel">
+            <div class="bg-gray-100 text-gray-500 text-xs px-3 py-1.5 rounded-t flex items-center gap-1 flex-shrink-0 border border-b-0 border-gray-200">
                 <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M12 21a9.004 9.004 0 008.716-6.747M12 21a9.004 9.004 0 01-8.716-6.747M12 21c2.485 0 4.5-4.03 4.5-9S14.485 3 12 3m0 18c-2.485 0-4.5-4.03-4.5-9S9.515 3 12 3m0 0a8.997 8.997 0 017.843 4.582M12 3a8.997 8.997 0 00-7.843 4.582m15.686 0A11.953 11.953 0 0112 10.5c-2.998 0-5.74-1.1-7.843-2.918m15.686 0A8.959 8.959 0 0121 12c0 .778-.099 1.533-.284 2.253m0 0A17.919 17.919 0 0112 16.5c-3.162 0-6.133-.815-8.716-2.247m0 0A9.015 9.015 0 013 12c0-1.605.42-3.113 1.157-4.418" /></svg>
                 <span>Output Preview</span>
             </div>
