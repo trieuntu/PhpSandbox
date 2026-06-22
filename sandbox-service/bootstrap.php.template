@@ -46,11 +46,13 @@ foreach (json_decode('__SHARED_DBS_JSON__', true) ?? [] as $_sdb) {
         $_sdb_pdo->setAttribute(PDO::ATTR_DEFAULT_FETCH_MODE, PDO::FETCH_ASSOC);
         $sharedDbs[$_sdb['slug']] = $_sdb_pdo;
     } catch (PDOException $e) { /* unavailable */ }
-    // mysqli (procedural style)
-    $_sdb_conn = @mysqli_connect($_sdb_host, $_sdb['user'], $_sdb['pass'], $_sdb_name, 3306);
-    if ($_sdb_conn) {
-        mysqli_set_charset($_sdb_conn, 'utf8mb4');
-        $sharedConns[$_sdb['slug']] = $_sdb_conn;
+    // mysqli (procedural style) — only if extension is available
+    if (function_exists('mysqli_connect')) {
+        $_sdb_conn = @mysqli_connect($_sdb_host, $_sdb['user'], $_sdb['pass'], $_sdb_name, 3306);
+        if ($_sdb_conn) {
+            mysqli_set_charset($_sdb_conn, 'utf8mb4');
+            $sharedConns[$_sdb['slug']] = $_sdb_conn;
+        }
     }
 }
 unset($_sdb, $_sdb_pdo, $_sdb_conn, $_sdb_host, $_sdb_name);
