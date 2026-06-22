@@ -139,7 +139,8 @@ class SandboxService {
     private function executeLocally(User $user, string $code, string $contextType, ?int $contextId, array $postData = [], array $files = [], string $targetFile = ''): array {
         $memLimit    = config('sandbox.memory_limit_mb', 64) . 'M';
         $maxTime     = (int) config('sandbox.max_execution_time', 5);
-        $php         = PHP_BINARY;
+        // PHP_BINARY may point to php-fpm in production containers; use php CLI instead
+        $php         = is_executable('/usr/local/bin/php') ? '/usr/local/bin/php' : PHP_BINARY;
         $disabledFns = implode(',', config('sandbox.disabled_functions', []));
         $initLine    = $this->buildInitLine($postData);
         $sharedDbsBootstrap = $this->buildSharedDbsBootstrap();
