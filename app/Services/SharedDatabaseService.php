@@ -136,7 +136,7 @@ class SharedDatabaseService
             $pdo = $this->getAdminConnection($dbName);
             $stmt = $pdo->query(
                 "SELECT TABLE_NAME AS name,
-                        TABLE_ROWS AS rows,
+                        TABLE_ROWS AS `rows`,
                         ROUND((DATA_LENGTH + INDEX_LENGTH) / 1024, 1) AS size_kb
                  FROM   information_schema.TABLES
                  WHERE  TABLE_SCHEMA = DATABASE()
