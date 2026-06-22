@@ -24,6 +24,7 @@ RUN docker-php-ext-configure gd \
         --with-webp \
     && docker-php-ext-install -j$(nproc) \
         pdo_mysql \
+        mysqli \
         bcmath \
         gd \
         intl \

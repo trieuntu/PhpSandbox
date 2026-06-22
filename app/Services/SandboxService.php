@@ -127,8 +127,10 @@ class SandboxService {
             . '        $__sdb_pdo->setAttribute(PDO::ATTR_DEFAULT_FETCH_MODE, PDO::FETCH_ASSOC);' . "\n"
             . '        $sharedDbs[$__sdb[\'slug\']] = $__sdb_pdo;' . "\n"
             . '    } catch (PDOException $e) {}' . "\n"
-            . '    $__sdb_conn = @mysqli_connect($__sdb_host, $__sdb[\'user\'], $__sdb[\'pass\'], $__sdb_name, 3306);' . "\n"
-            . '    if ($__sdb_conn) { mysqli_set_charset($__sdb_conn, \'utf8mb4\'); $sharedConns[$__sdb[\'slug\']] = $__sdb_conn; }' . "\n"
+            . '    if (function_exists(\'mysqli_connect\')) {' . "\n"
+            . '        $__sdb_conn = @mysqli_connect($__sdb_host, $__sdb[\'user\'], $__sdb[\'pass\'], $__sdb_name, 3306);' . "\n"
+            . '        if ($__sdb_conn) { mysqli_set_charset($__sdb_conn, \'utf8mb4\'); $sharedConns[$__sdb[\'slug\']] = $__sdb_conn; }' . "\n"
+            . '    }' . "\n"
             . '}' . "\n"
             . 'unset($__sdb, $__sdb_pdo, $__sdb_conn, $__sdb_host, $__sdb_name);' . "\n"
             . '?>' . "\n";
