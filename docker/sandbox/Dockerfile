@@ -8,6 +8,7 @@ RUN apk add --no-cache \
 # Install minimal PHP extensions
 RUN docker-php-ext-install -j$(nproc) \
     pdo_mysql \
+    mysqli \
     mbstring
 
 # Copy restrictive sandbox php.ini
