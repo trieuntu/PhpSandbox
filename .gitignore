@@ -1,6 +1,7 @@
 *.log
 .DS_Store
 ARCHITECTURE.md
+installed.md
 .env
 .env.backup
 .env.production

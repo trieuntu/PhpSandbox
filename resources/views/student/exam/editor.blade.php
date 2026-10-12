@@ -9,6 +9,7 @@
 @endpush
 @section('content')
 <?php
+$defaultExamCode = "<?php\n\n// Viết code PHP của bạn ở đây\n";
 $initialExamFiles = null;
 if ($lastSubmission) {
     if (!empty($lastSubmission->files) && count($lastSubmission->files) > 0) {
@@ -17,7 +18,7 @@ if ($lastSubmission) {
             array_keys($lastSubmission->files), array_values($lastSubmission->files)
         ));
     } else {
-        $initialExamFiles = [['name' => 'index.php', 'content' => $lastSubmission->code ?? "<?php\n\n// Viết code PHP của bạn ở đây\n"]];
+        $initialExamFiles = [['name' => 'index.php', 'content' => $lastSubmission->code ?? $defaultExamCode]];
     }
 }
 ?>
@@ -117,10 +118,11 @@ if ($lastSubmission) {
 <script>
 let monacoEditor;
 const initialExamFiles = @json($initialExamFiles);
+const defaultExamCode = @json($defaultExamCode);
 
 require.config({ paths: { vs: 'https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.44.0/min/vs' } });
 require(['vs/editor/editor.main'], function() {
-    const firstContent = initialExamFiles ? initialExamFiles[0].content : '<?php\n\n// Viết code PHP của bạn ở đây\n';
+    const firstContent = initialExamFiles ? initialExamFiles[0].content : defaultExamCode;
     monacoEditor = monaco.editor.create(document.getElementById('editor'), {
         value: firstContent,
         language: 'php',

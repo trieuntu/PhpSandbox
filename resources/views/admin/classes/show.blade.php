@@ -45,7 +45,7 @@
         <div class="px-4 py-3 border-b border-gray-100">
             <h2 class="font-semibold text-gray-700">Sinh viên ({{ $class->students->count() }})</h2>
         </div>
-        <div class="px-4 py-3 border-b border-gray-100 space-y-3" x-data="studentPicker('{{ route('admin.classes.students.search', $class) }}')">
+        <div class="px-4 py-3 border-b border-gray-100 space-y-3" x-data="studentPicker('{{ route('admin.classes.students.search', $class, false) }}')">
             <form method="POST" action="{{ route('admin.classes.students.store', $class) }}" @submit="if(!selected.length) $event.preventDefault()">
                 @csrf
                 <div class="relative">
@@ -60,6 +60,7 @@
                             </button>
                         </template>
                     </div>
+                    <p x-show="status" x-cloak x-text="status" class="text-xs text-red-500 mt-1"></p>
                 </div>
                 <div class="flex flex-wrap gap-1 mt-2">
                     <template x-for="u in selected" :key="u.id">
@@ -192,12 +193,20 @@
 <script>
 document.addEventListener('alpine:init', () => {
     Alpine.data('studentPicker', (searchUrl) => ({
-        query: '', results: [], selected: [],
+        query: '', results: [], selected: [], status: '',
         async search() {
             const q = this.query.trim();
+            this.status = '';
             if (!q) { this.results = []; return; }
-            const res = await fetch(searchUrl + '?q=' + encodeURIComponent(q), { headers: { 'Accept': 'application/json' } });
-            this.results = res.ok ? (await res.json()).filter(u => !this.selected.some(s => s.id === u.id)) : [];
+            try {
+                const res = await fetch(searchUrl + '?q=' + encodeURIComponent(q), { headers: { 'Accept': 'application/json' }, credentials: 'same-origin' });
+                if (!res.ok) { this.results = []; this.status = 'Lỗi tìm kiếm (HTTP ' + res.status + ').'; return; }
+                this.results = (await res.json()).filter(u => !this.selected.some(s => s.id === u.id));
+                if (!this.results.length) this.status = 'Không tìm thấy sinh viên (hoặc đã có trong lớp).';
+            } catch (e) {
+                this.results = [];
+                this.status = 'Không kết nối được máy chủ.';
+            }
         },
         add(u) { this.selected.push(u); this.results = []; this.query = ''; },
         remove(id) { this.selected = this.selected.filter(s => s.id !== id); },

@@ -8,11 +8,9 @@ class HtmlSanitizer {
     public static function clean(?string $html): ?string {
         if ($html === null || trim($html) === '') return null;
 
-        $dir = storage_path('framework/cache/htmlpurifier');
-        if (!is_dir($dir)) @mkdir($dir, 0775, true);
-
         $config = HTMLPurifier_Config::createDefault();
-        $config->set('Cache.SerializerPath', $dir);
+        // No on-disk definition cache: an unwritable cache dir makes HTMLPurifier raise a warning (HTTP 500).
+        $config->set('Cache.DefinitionImpl', null);
         $config->set('HTML.Doctype', 'HTML 4.01 Transitional');
         $config->set('HTML.Allowed',
             'p,br,hr,strong,b,em,i,u,s,strike,sub,sup,blockquote,pre[class],code[class],span[style|class],div[style|class],'
