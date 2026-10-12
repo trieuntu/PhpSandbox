@@ -106,6 +106,11 @@ compose up -d --build --force-recreate --no-deps app queue nginx
 echo "==> Ensure all services are up"
 compose up -d --remove-orphans
 
+# vendor/ is git-ignored and bind-mounted, so new composer packages must be installed here.
+# The app container runs as www-data, which cannot write to the host-owned vendor/ bind mount.
+echo "==> Install PHP dependencies"
+compose exec -T -u root app composer install --no-dev --prefer-dist --optimize-autoloader --no-interaction
+
 echo "==> Fix permissions for Laravel writable dirs"
 ${DOCKER_CMD[@]} compose exec -T app sh -lc 'mkdir -p storage/logs bootstrap/cache && chown -R 82:82 storage bootstrap/cache && chmod -R ug+rwX storage bootstrap/cache'
 
