@@ -109,6 +109,7 @@
 @push('scripts')
 <script src="https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.44.0/min/vs/loader.min.js"></script>
 @include('partials._multifile_js')
+@include('partials._editor_intellisense')
 <?php
 $phpExamples = [
     'hello' => "<?php\necho \"Hello, World!\";\necho \"\\nChào mừng đến với PHP Sandbox!\";\n",
@@ -129,7 +130,8 @@ const multifileExample = @json($multifileExample);
 
 require.config({ paths: { vs: 'https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.44.0/min/vs' } });
 require(['vs/editor/editor.main'], function() {
-    monacoEditor = monaco.editor.create(document.getElementById('editor'), {
+    registerSandboxCompletions(monaco);
+    monacoEditor = monaco.editor.create(document.getElementById('editor'), Object.assign(sandboxEditorOptions(), {
         value: '\x3C?php\n\n// Viết code PHP của bạn ở đây\necho "Hello, World!";\n',
         language: 'php',
         theme: 'vs',
@@ -138,7 +140,7 @@ require(['vs/editor/editor.main'], function() {
         scrollBeyondLastLine: false,
         automaticLayout: true,
         wordWrap: 'on',
-    });
+    }));
 });
 
 function sandboxApp(contextType, contextId) {

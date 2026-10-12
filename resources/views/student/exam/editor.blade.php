@@ -115,6 +115,7 @@ if ($lastSubmission) {
 @push('scripts')
 <script src="https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.44.0/min/vs/loader.min.js"></script>
 @include('partials._multifile_js')
+@include('partials._editor_intellisense')
 <script>
 let monacoEditor;
 const initialExamFiles = @json($initialExamFiles);
@@ -122,8 +123,9 @@ const defaultExamCode = @json($defaultExamCode);
 
 require.config({ paths: { vs: 'https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.44.0/min/vs' } });
 require(['vs/editor/editor.main'], function() {
+    registerSandboxCompletions(monaco);
     const firstContent = initialExamFiles ? initialExamFiles[0].content : defaultExamCode;
-    monacoEditor = monaco.editor.create(document.getElementById('editor'), {
+    monacoEditor = monaco.editor.create(document.getElementById('editor'), Object.assign(sandboxEditorOptions(), {
         value: firstContent,
         language: 'php',
         theme: 'vs',
@@ -132,7 +134,7 @@ require(['vs/editor/editor.main'], function() {
         scrollBeyondLastLine: false,
         automaticLayout: true,
         wordWrap: 'on',
-    });
+    }));
 
     // Auto-save on change (debounced 30s)
     let saveTimer;

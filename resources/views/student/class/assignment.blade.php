@@ -143,6 +143,7 @@ if ($lastSub) {
 @push('scripts')
 <script src="https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.44.0/min/vs/loader.min.js"></script>
 @include('partials._multifile_js')
+@include('partials._editor_intellisense')
 <script>
 let monacoEditor;
 let sandboxInstance;
@@ -150,9 +151,10 @@ const initialEditorFiles = @json($initialEditorFiles);
 
 require.config({ paths: { vs: 'https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.44.0/min/vs' } });
 require(['vs/editor/editor.main'], function() {
+    registerSandboxCompletions(monaco);
     const firstContent = initialEditorFiles ? initialEditorFiles[0].content
         : '\x3C?php\n\n// Viết code PHP của bạn ở đây\necho \'Hello, World!\';\n';
-    monacoEditor = monaco.editor.create(document.getElementById('editor'), {
+    monacoEditor = monaco.editor.create(document.getElementById('editor'), Object.assign(sandboxEditorOptions(), {
         value: firstContent,
         language: 'php',
         theme: 'vs',
@@ -161,7 +163,7 @@ require(['vs/editor/editor.main'], function() {
         scrollBeyondLastLine: false,
         automaticLayout: true,
         wordWrap: 'on',
-    });
+    }));
 });
 
 function restoreSubmission(filesJson, codeString) {
