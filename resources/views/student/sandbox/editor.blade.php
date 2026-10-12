@@ -1,12 +1,12 @@
 @extends('layouts.app')
 @section('title', 'PHP Sandbox')
+@section('container', 'wide')
 @push('styles')
 @include('partials._multifile_css')
 @endpush
 @section('content')
-<div x-data="sandboxApp('free', null)" x-init="init()"
-     style="height: calc(100vh - 112px); display: flex; flex-direction: column;">
-    <div class="flex justify-between items-center mb-3 flex-shrink-0">
+<div x-data="sandboxApp('free', null)" x-init="init()" class="workspace-page">
+    <div class="flex flex-wrap justify-between items-center gap-2 mb-3 flex-shrink-0">
         <div>
             <h1 class="text-xl font-bold text-gray-800 flex items-center gap-2">
                 <svg class="w-5 h-5 text-blue-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true">
@@ -62,9 +62,9 @@
         <span x-text="executionTime" class="text-xs text-gray-400"></span>
     </div>
 
-    <div class="grid grid-cols-5 gap-4 flex-1 min-h-0">
+    <div class="workspace-grid flex-1 min-h-0">
         <!-- Editor Panel -->
-        <div class="col-span-3 sandbox-panel">
+        <div class="sandbox-panel panel-editor">
             @include('partials._filetabs_html')
             <div class="editor-wrap">
                 <div id="editor"></div>
@@ -90,8 +90,10 @@
             </div>
         </div>
 
+        <div class="split-gutter" role="separator" aria-orientation="vertical" tabindex="0" title="Kéo để đổi kích thước (nhấp đúp để đặt lại)"></div>
+
         <!-- Preview Panel -->
-        <div class="col-span-2 sandbox-panel">
+        <div class="sandbox-panel panel-preview">
             <div class="bg-gray-100 text-gray-500 text-xs px-3 py-1.5 rounded-t flex items-center justify-between flex-shrink-0 border border-b-0 border-gray-200">
                 <span class="flex items-center gap-1">
                     <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M12 21a9.004 9.004 0 008.716-6.747M12 21a9.004 9.004 0 01-8.716-6.747M12 21c2.485 0 4.5-4.03 4.5-9S14.485 3 12 3m0 18c-2.485 0-4.5-4.03-4.5-9S9.515 3 12 3m0 0a8.997 8.997 0 017.843 4.582M12 3a8.997 8.997 0 00-7.843 4.582m15.686 0A11.953 11.953 0 0112 10.5c-2.998 0-5.74-1.1-7.843-2.918m15.686 0A8.959 8.959 0 0121 12c0 .778-.099 1.533-.284 2.253m0 0A17.919 17.919 0 0112 16.5c-3.162 0-6.133-.815-8.716-2.247m0 0A9.015 9.015 0 013 12c0-1.605.42-3.113 1.157-4.418" /></svg>
@@ -110,6 +112,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.44.0/min/vs/loader.min.js"></script>
 @include('partials._multifile_js')
 @include('partials._editor_intellisense')
+@include('partials._workspace_split')
 <?php
 $phpExamples = [
     'hello' => "<?php\necho \"Hello, World!\";\necho \"\\nChào mừng đến với PHP Sandbox!\";\n",

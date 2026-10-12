@@ -1,5 +1,6 @@
 @extends('layouts.app')
 @section('title', $exam->title)
+@section('container', 'wide')
 @push('styles')
 @include('partials._multifile_css')
 <style>
@@ -22,15 +23,14 @@ if ($lastSubmission) {
     }
 }
 ?>
-<div x-data="examApp({{ $exam->id }}, {{ $remainingSeconds ?? 'null' }})" x-init="init()"
-     style="height: calc(100vh - 112px); display: flex; flex-direction: column;">
+<div x-data="examApp({{ $exam->id }}, {{ $remainingSeconds ?? 'null' }})" x-init="init()" class="workspace-page">
     <!-- Header with Timer -->
-    <div class="flex justify-between items-center mb-3 flex-shrink-0">
+    <div class="flex flex-wrap justify-between items-center gap-2 mb-3 flex-shrink-0">
         <div>
             <h1 class="text-xl font-bold text-gray-800">{{ $exam->title }}</h1>
             <p class="text-sm text-gray-500">{{ $exam->class->name }}</p>
         </div>
-        <div class="flex items-center gap-4">
+        <div class="flex flex-wrap items-center gap-2 sm:gap-4">
             <span x-show="autoSaved" x-cloak class="flex items-center gap-1 text-xs text-green-600 bg-green-50 px-2 py-1 rounded">
                 <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M12 16.5V9.75m0 0l3 3m-3-3l-3 3M6.75 19.5a4.5 4.5 0 01-1.41-8.775 5.25 5.25 0 0110.233-2.33 3 3 0 013.758 3.848A3.752 3.752 0 0118 19.5H6.75z" /></svg>
                 Đã lưu
@@ -56,7 +56,7 @@ if ($lastSubmission) {
     </div>
 
     <!-- Run Button Row -->
-    <div class="flex items-center gap-3 mb-2 flex-shrink-0">
+    <div class="flex flex-wrap items-center gap-3 mb-2 flex-shrink-0">
         <button @click="runCode()" :disabled="running"
             class="flex items-center gap-1.5 bg-green-600 text-white px-5 py-2 rounded font-medium hover:bg-green-700 disabled:opacity-50 transition">
             <span x-show="!running" class="flex items-center gap-1.5">
@@ -85,9 +85,9 @@ if ($lastSubmission) {
     </div>
     @endif
 
-    <div class="grid grid-cols-5 gap-4 flex-1 min-h-0">
+    <div class="workspace-grid flex-1 min-h-0">
         <!-- Editor -->
-        <div class="col-span-3 sandbox-panel">
+        <div class="sandbox-panel panel-editor">
             @include('partials._filetabs_html')
             <div class="editor-wrap">
                 <div id="editor"></div>
@@ -99,8 +99,10 @@ if ($lastSubmission) {
             </div>
         </div>
 
+        <div class="split-gutter" role="separator" aria-orientation="vertical" tabindex="0" title="Kéo để đổi kích thước (nhấp đúp để đặt lại)"></div>
+
         <!-- Preview -->
-        <div class="col-span-2 sandbox-panel">
+        <div class="sandbox-panel panel-preview">
             <div class="bg-gray-100 text-gray-500 text-xs px-3 py-1.5 rounded-t flex items-center gap-1 flex-shrink-0 border border-b-0 border-gray-200">
                 <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M12 21a9.004 9.004 0 008.716-6.747M12 21a9.004 9.004 0 01-8.716-6.747M12 21c2.485 0 4.5-4.03 4.5-9S14.485 3 12 3m0 18c-2.485 0-4.5-4.03-4.5-9S9.515 3 12 3m0 0a8.997 8.997 0 017.843 4.582M12 3a8.997 8.997 0 00-7.843 4.582m15.686 0A11.953 11.953 0 0112 10.5c-2.998 0-5.74-1.1-7.843-2.918m15.686 0A8.959 8.959 0 0121 12c0 .778-.099 1.533-.284 2.253m0 0A17.919 17.919 0 0112 16.5c-3.162 0-6.133-.815-8.716-2.247m0 0A9.015 9.015 0 013 12c0-1.605.42-3.113 1.157-4.418" /></svg>
                 Output Preview
@@ -116,6 +118,7 @@ if ($lastSubmission) {
 <script src="https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.44.0/min/vs/loader.min.js"></script>
 @include('partials._multifile_js')
 @include('partials._editor_intellisense')
+@include('partials._workspace_split')
 <script>
 let monacoEditor;
 const initialExamFiles = @json($initialExamFiles);

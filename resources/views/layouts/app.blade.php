@@ -1,4 +1,14 @@
 <!DOCTYPE html>
+@php
+    // Child views choose the page width: 'wide' = full width (editors), 'xl' = wider dashboard, default = 7xl.
+    $containerMode = trim($__env->yieldContent('container'));
+    $cw = match ($containerMode) {
+        'wide' => 'w-full px-3 sm:px-4 lg:px-5',
+        'xl' => 'max-w-screen-2xl mx-auto px-4 sm:px-6 lg:px-8',
+        default => 'max-w-7xl mx-auto px-4 sm:px-6 lg:px-8',
+    };
+    $mainPad = $containerMode === 'wide' ? 'py-3' : 'py-6';
+@endphp
 <html lang="vi">
 <head>
     <meta charset="UTF-8">
@@ -25,7 +35,7 @@
 
 <!-- Navigation -->
 <nav class="bg-white border-b border-gray-200 shadow-sm" x-data="{ mobileOpen: false }">
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <div class="{{ $cw }}">
         <div class="flex justify-between h-16">
             <!-- Logo + desktop links -->
             <div class="flex items-center">
@@ -85,7 +95,8 @@
 </nav>
 
 <!-- Flash Messages -->
-<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-4">
+@if(session('success') || session('error') || session('warning'))
+<div class="{{ $cw }} mt-3">
     @if(session('success'))
         <div class="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded mb-4">{{ session('success') }}</div>
     @endif
@@ -96,15 +107,16 @@
         <div class="bg-yellow-100 border border-yellow-400 text-yellow-700 px-4 py-3 rounded mb-4">{{ session('warning') }}</div>
     @endif
 </div>
+@endif
 
 <!-- Main Content -->
-<main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 flex-1">
+<main class="{{ $cw }} {{ $mainPad }} flex-1 w-full">
     @yield('content')
 </main>
 
 <!-- Footer -->
 <footer class="bg-white border-t border-gray-200 mt-auto">
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+    <div class="{{ $cw }} py-4">
         <div class="flex flex-col sm:flex-row items-center justify-between gap-2 text-xs text-gray-500">
             <div class="flex items-center gap-2">
                 <svg class="w-4 h-4 text-blue-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true">

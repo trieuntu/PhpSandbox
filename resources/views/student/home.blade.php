@@ -1,7 +1,8 @@
 @extends('layouts.app')
 @section('title', 'Dashboard')
+@section('container', 'xl')
 @section('content')
-<div class="space-y-3">
+<div class="space-y-4">
 
     <!-- Welcome + Sandbox row -->
     <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
@@ -15,6 +16,25 @@
             PHP Sandbox
         </a>
     </div>
+
+    <!-- Quick stats -->
+    <div class="grid grid-cols-3 gap-2 sm:gap-3">
+        <div class="bg-white rounded-lg border border-gray-200 px-3 py-2.5 text-center sm:text-left">
+            <p class="text-xl sm:text-2xl font-bold text-blue-600 leading-none">{{ $classes->count() }}</p>
+            <p class="text-xs text-gray-500 mt-1">Lớp học</p>
+        </div>
+        <div class="bg-white rounded-lg border {{ $openExams->count() ? 'border-orange-300' : 'border-gray-200' }} px-3 py-2.5 text-center sm:text-left">
+            <p class="text-xl sm:text-2xl font-bold {{ $openExams->count() ? 'text-orange-500' : 'text-gray-400' }} leading-none">{{ $openExams->count() }}</p>
+            <p class="text-xs text-gray-500 mt-1">Bài thi đang mở</p>
+        </div>
+        <div class="bg-white rounded-lg border border-gray-200 px-3 py-2.5 text-center sm:text-left">
+            <p class="text-xl sm:text-2xl font-bold text-gray-700 leading-none">{{ $announcements->count() }}</p>
+            <p class="text-xs text-gray-500 mt-1">Thông báo</p>
+        </div>
+    </div>
+
+    <div class="grid grid-cols-1 xl:grid-cols-3 gap-4 items-start">
+    <div class="xl:col-span-2 space-y-4 min-w-0">
 
     <!-- Open Exams (full width, compact) -->
     @if($openExams->count())
@@ -48,7 +68,7 @@
             Lớp học của bạn
         </h2>
         @if($classes->count())
-        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
+        <div class="grid grid-cols-1 sm:grid-cols-2 2xl:grid-cols-3 gap-3">
             @foreach($classes as $class)
             <div class="bg-white rounded-lg border border-gray-200 p-3 hover:border-blue-300 hover:shadow-sm transition flex flex-col gap-2">
                 <div class="flex-1 min-w-0">
@@ -83,14 +103,16 @@
         @endif
     </div>
 
+    </div>
+
     <!-- Announcements -->
     @if($announcements->count())
-    <div>
+    <aside class="min-w-0">
         <h2 class="text-sm font-semibold text-gray-700 flex items-center gap-1.5 mb-2">
             <svg class="w-4 h-4 text-gray-500 flex-shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M14.857 17.082a23.848 23.848 0 005.454-1.31A8.967 8.967 0 0118 9.75v-.7V9A6 6 0 006 9v.75a8.967 8.967 0 01-2.312 6.022c1.733.64 3.56 1.085 5.455 1.31m5.714 0a24.255 24.255 0 01-5.714 0m5.714 0a3 3 0 11-5.714 0" /></svg>
             Thông báo
         </h2>
-        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
+        <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-1 gap-3">
             @foreach($announcements as $announcement)
             <div class="bg-white rounded-lg border p-3 {{ $announcement->is_pinned ? 'border-blue-200 bg-blue-50' : 'border-gray-200' }}">
                 <h3 class="font-semibold text-gray-800 text-sm flex items-start gap-1">
@@ -104,7 +126,8 @@
             </div>
             @endforeach
         </div>
-    </div>
+    </aside>
     @endif
+    </div>
 </div>
 @endsection
