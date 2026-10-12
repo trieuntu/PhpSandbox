@@ -71,6 +71,9 @@ services:
     security_opt:
       - no-new-privileges:true
     read_only: false
+    environment:
+      # php -S is single-threaded by default; workers let several students run code at once.
+      PHP_CLI_SERVER_WORKERS: ${SANDBOX_WORKERS:-8}
     tmpfs:
       - /tmp/sandbox_exec:mode=1777,size=64m
 
@@ -133,7 +136,7 @@ services:
       dockerfile: Dockerfile
     command: php artisan queue:work redis --sleep=1 --tries=3 --timeout=60 --max-jobs=1000
     deploy:
-      replicas: 3
+      replicas: ${QUEUE_REPLICAS:-6}
     environment:
       APP_NAME: ${APP_NAME:-"PHP Sandbox"}
       APP_ENV: ${APP_ENV:-local}

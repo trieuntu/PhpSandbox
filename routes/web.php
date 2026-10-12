@@ -46,11 +46,14 @@ Route::middleware(['auth', 'inactivity'])->group(function () {
 });
 
 // Sandbox API
-Route::middleware(['auth', 'throttle:30,1'])->group(function () {
+Route::middleware(['auth', 'throttle:sandbox-execute'])->group(function () {
     Route::post('/api/sandbox/execute', [SandboxController::class, 'execute'])->name('sandbox.execute');
+    Route::post('/api/sandbox/execute-form/{submissionId}', [SandboxController::class, 'executeForm'])->name('sandbox.execute_form');
+});
+
+Route::middleware(['auth', 'throttle:sandbox-poll'])->group(function () {
     Route::get('/api/sandbox/job/{submissionId}', [SandboxController::class, 'pollJob'])->name('sandbox.poll');
     Route::get('/api/sandbox/preview/{submissionId}', [SandboxController::class, 'preview'])->name('sandbox.preview');
-    Route::post('/api/sandbox/execute-form/{submissionId}', [SandboxController::class, 'executeForm'])->name('sandbox.execute_form');
     Route::post('/api/heartbeat', [SandboxController::class, 'heartbeat'])->name('heartbeat');
 });
 
