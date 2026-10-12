@@ -26,6 +26,7 @@ return Application::configure(basePath: dirname(__DIR__))
             'inactivity' => \App\Http\Middleware\InactivityTimeout::class,
             'registration.enabled' => \App\Http\Middleware\CheckRegistrationEnabled::class,
             'exam.access' => \App\Http\Middleware\ExamAccessGuard::class,
+            'exam.enrolled' => \App\Http\Middleware\EnsureEnrolledInExamClass::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {

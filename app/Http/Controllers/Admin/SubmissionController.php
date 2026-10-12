@@ -17,7 +17,7 @@ class SubmissionController extends Controller {
         if ($to = $request->input('to')) $query->where('submitted_at', '<=', $to . ' 23:59:59');
         
         $submissions = $query->paginate(20);
-        $users = User::where('role', 'student')->orderBy('name')->get();
+        $users = User::where('role', 'student')->orderBy('first_name')->orderBy('last_name')->get();
         $exams = Exam::orderByDesc('starts_at')->get();
         
         return view('admin.submissions.index', compact('submissions', 'users', 'exams'));

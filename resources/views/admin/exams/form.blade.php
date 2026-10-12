@@ -1,7 +1,7 @@
 @extends('layouts.admin')
 @section('title', isset($exam) ? 'Sửa kỳ thi' : 'Tạo kỳ thi')
 @section('content')
-<div class="max-w-2xl">
+<div class="max-w-4xl">
     <div class="mb-6">
         <a href="{{ route('admin.exams.index') }}" class="text-sm text-gray-500 hover:text-blue-600">← Danh sách kỳ thi</a>
         <h1 class="text-2xl font-bold text-gray-800 mt-2">
@@ -65,9 +65,9 @@
 
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-1">Đề thi / Hướng dẫn</label>
-                    <textarea name="instructions" rows="6"
-                        placeholder="Nhập đề bài, yêu cầu, hướng dẫn cho sinh viên..."
-                        class="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">{{ old('instructions', $exam->instructions ?? '') }}</textarea>
+                    <textarea name="instructions" rows="12" class="rich-editor">{{ old('instructions', isset($exam) ? \App\Support\HtmlSanitizer::render($exam->instructions) : '') }}</textarea>
+                    @error('instructions')<p class="text-red-500 text-xs mt-1">{{ $message }}</p>@enderror
+                    <p class="text-xs text-gray-400 mt-1">Có thể chèn ảnh (kéo thả/dán, tối đa 5MB), bảng và đoạn code.</p>
                 </div>
             </div>
 
@@ -82,4 +82,5 @@
         </form>
     </div>
 </div>
+@include('partials._rich_editor')
 @endsection

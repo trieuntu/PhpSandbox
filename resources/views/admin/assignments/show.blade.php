@@ -18,7 +18,7 @@
             <p class="text-gray-600 mb-3">{{ $assignment->description }}</p>
         @endif
         @if($assignment->instructions)
-            <div class="bg-gray-50 rounded p-3 text-sm text-gray-600 whitespace-pre-wrap">{{ $assignment->instructions }}</div>
+            <div class="bg-gray-50 rounded p-3 text-sm text-gray-600 rich-content">{!! \App\Support\HtmlSanitizer::render($assignment->instructions) !!}</div>
         @endif
         <div class="mt-4 flex gap-6 text-sm text-gray-500">
             <span>Hạn nộp: <strong class="text-gray-700">{{ $assignment->due_at ? $assignment->due_at->format('d/m/Y H:i') : 'Không giới hạn' }}</strong></span>

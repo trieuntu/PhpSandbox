@@ -14,6 +14,8 @@ class UserController extends Controller {
         if ($search = $request->input('search')) {
             $query->where(function($q) use ($search) {
                 $q->where('name', 'like', "%{$search}%")
+                  ->orWhere('first_name', 'like', "%{$search}%")
+                  ->orWhere('last_name', 'like', "%{$search}%")
                   ->orWhere('email', 'like', "%{$search}%")
                   ->orWhere('student_id', 'like', "%{$search}%");
             });
@@ -30,7 +32,8 @@ class UserController extends Controller {
     public function store(Request $request, DatabaseProvisionService $dbService) {
         $data = $request->validate([
             'student_id' => 'nullable|string|max:50|unique:users',
-            'name' => 'required|string|max:255',
+            'last_name' => 'required|string|max:150',
+            'first_name' => 'required|string|max:100',
             'email' => 'required|email|unique:users',
             'password' => 'required|string|min:8',
             'role' => 'required|in:admin,student',
@@ -38,7 +41,8 @@ class UserController extends Controller {
         
         $user = User::create([
             'student_id' => $data['student_id'] ?? null,
-            'name' => $data['name'],
+            'last_name' => trim($data['last_name']),
+            'first_name' => trim($data['first_name']),
             'email' => $data['email'],
             'password' => Hash::make($data['password']),
             'role' => $data['role'],
@@ -64,7 +68,8 @@ class UserController extends Controller {
     public function update(Request $request, User $user) {
         $data = $request->validate([
             'student_id' => 'nullable|string|max:50|unique:users,student_id,' . $user->id,
-            'name' => 'required|string|max:255',
+            'last_name' => 'required|string|max:150',
+            'first_name' => 'required|string|max:100',
             'email' => 'required|email|unique:users,email,' . $user->id,
             'role' => 'required|in:admin,student',
             'is_active' => 'boolean',
@@ -109,11 +114,13 @@ class UserController extends Controller {
         while ($row = fgetcsv($handle)) {
             $data = array_combine($headers, $row);
             try {
+                $nameFields = isset($data['first_name']) || isset($data['last_name'])
+                    ? ['last_name' => trim($data['last_name'] ?? ''), 'first_name' => trim($data['first_name'] ?? '')]
+                    : ['name' => $data['name']];
                 $user = User::firstOrCreate(
                     ['email' => $data['email']],
-                    [
+                    $nameFields + [
                         'student_id' => $data['student_id'] ?? null,
-                        'name' => $data['name'],
                         'password' => Hash::make($data['password'] ?? 'password123'),
                         'role' => 'student',
                         'is_active' => true,

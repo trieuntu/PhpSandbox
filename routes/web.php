@@ -2,6 +2,7 @@
 
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Auth\LoginController;
+use App\Http\Controllers\UploadController;
 use App\Http\Controllers\Auth\RegisterController;
 use App\Http\Controllers\Student\HomeController;
 use App\Http\Controllers\Student\ClassController as StudentClassController;
@@ -10,6 +11,7 @@ use App\Http\Controllers\Student\SandboxController;
 use App\Http\Controllers\Admin\DashboardController;
 use App\Http\Controllers\Admin\UserController;
 use App\Http\Controllers\Admin\ClassController as AdminClassController;
+use App\Http\Controllers\Admin\ClassStudentController;
 use App\Http\Controllers\Admin\ExamController as AdminExamController;
 use App\Http\Controllers\Admin\AssignmentController;
 use App\Http\Controllers\Admin\SubmissionController;
@@ -28,16 +30,19 @@ Route::post('/register', [RegisterController::class, 'register'])->middleware(['
 // Student routes
 Route::middleware(['auth', 'inactivity'])->group(function () {
     Route::get('/', [HomeController::class, 'index'])->name('student.home');
+    Route::get('/media/{uuid}', [UploadController::class, 'show'])->name('media.show');
     Route::get('/classes', [StudentClassController::class, 'index'])->name('student.classes.index');
     Route::get('/classes/{class}', [StudentClassController::class, 'show'])->name('student.classes.show');
     Route::get('/classes/{class}/assignments/{assignment}', [StudentClassController::class, 'assignment'])->name('student.classes.assignment');
     Route::get('/sandbox', [SandboxController::class, 'editor'])->name('student.sandbox.editor');
 
-    Route::get('/exams/{exam}', [StudentExamController::class, 'lobby'])->name('student.exams.lobby');
-    Route::post('/exams/{exam}/start', [StudentExamController::class, 'start'])->name('student.exams.start');
-    Route::get('/exams/{exam}/editor', [StudentExamController::class, 'editor'])->name('student.exams.editor')->middleware('exam.access');
-    Route::post('/exams/{exam}/submit', [StudentExamController::class, 'submit'])->name('student.exams.submit');
-    Route::get('/exams/{exam}/submitted', [StudentExamController::class, 'submitted'])->name('student.exams.submitted');
+    Route::middleware('exam.enrolled')->group(function () {
+        Route::get('/exams/{exam}', [StudentExamController::class, 'lobby'])->name('student.exams.lobby');
+        Route::post('/exams/{exam}/start', [StudentExamController::class, 'start'])->name('student.exams.start');
+        Route::get('/exams/{exam}/editor', [StudentExamController::class, 'editor'])->name('student.exams.editor')->middleware('exam.access');
+        Route::post('/exams/{exam}/submit', [StudentExamController::class, 'submit'])->name('student.exams.submit');
+        Route::get('/exams/{exam}/submitted', [StudentExamController::class, 'submitted'])->name('student.exams.submitted');
+    });
 });
 
 // Sandbox API
@@ -52,6 +57,7 @@ Route::middleware(['auth', 'throttle:30,1'])->group(function () {
 // Admin routes
 Route::prefix('admin')->name('admin.')->middleware(['auth', 'admin'])->group(function () {
     Route::get('/', [DashboardController::class, 'index'])->name('dashboard');
+    Route::post('/uploads/image', [UploadController::class, 'store'])->name('uploads.image');
 
     Route::get('/users', [UserController::class, 'index'])->name('users.index');
     Route::get('/users/create', [UserController::class, 'create'])->name('users.create');
@@ -73,6 +79,11 @@ Route::prefix('admin')->name('admin.')->middleware(['auth', 'admin'])->group(fun
     Route::put('/classes/{class}', [AdminClassController::class, 'update'])->name('classes.update');
     Route::delete('/classes/{class}', [AdminClassController::class, 'destroy'])->name('classes.destroy');
     Route::patch('/classes/{class}/toggle', [AdminClassController::class, 'toggle'])->name('classes.toggle');
+
+    // Class students (enrollment)
+    Route::get('/classes/{class}/students/search', [ClassStudentController::class, 'search'])->name('classes.students.search');
+    Route::post('/classes/{class}/students', [ClassStudentController::class, 'store'])->name('classes.students.store');
+    Route::delete('/classes/{class}/students/{user}', [ClassStudentController::class, 'destroy'])->name('classes.students.destroy');
 
     // Assignments (nested under classes)
     Route::get('/classes/{class}/assignments/create', [AssignmentController::class, 'create'])->name('assignments.create');

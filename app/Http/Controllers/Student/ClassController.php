@@ -29,6 +29,7 @@ class ClassController extends Controller {
     
     public function assignment(Classes $class, Assignment $assignment) {
         $this->authorizeEnrollment($class);
+        abort_unless($assignment->class_id === $class->id, 404);
         if (!$class->is_active) abort(403, 'Lớp học này hiện không khả dụng.');
         if (!$assignment->is_active) {
             return redirect()->route('student.classes.show', $class)

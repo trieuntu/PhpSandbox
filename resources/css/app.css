@@ -5,6 +5,20 @@
 /* Alpine.js cloak — hide x-cloak elements until Alpine initializes */
 [x-cloak] { display: none !important; }
 
+/* Rendered rich-text (exam / assignment instructions) */
+.rich-content { line-height: 1.6; overflow-wrap: anywhere; }
+.rich-content p { margin: 0 0 .6em; }
+.rich-content img { max-width: 100%; height: auto; }
+.rich-content ul { list-style: disc; padding-left: 1.5em; margin: 0 0 .6em; }
+.rich-content ol { list-style: decimal; padding-left: 1.5em; margin: 0 0 .6em; }
+.rich-content h1, .rich-content h2, .rich-content h3, .rich-content h4 { font-weight: 600; margin: .8em 0 .4em; }
+.rich-content a { color: #2563eb; text-decoration: underline; }
+.rich-content pre { background: #1f2937; color: #e5e7eb; padding: .75em 1em; border-radius: .375rem; overflow-x: auto; margin: 0 0 .6em; font-family: ui-monospace, Menlo, monospace; font-size: .85em; }
+.rich-content :not(pre) > code { background: #f3f4f6; padding: 0 .25em; border-radius: .25rem; }
+.rich-content table { border-collapse: collapse; margin: 0 0 .6em; }
+.rich-content th, .rich-content td { border: 1px solid #d1d5db; padding: .25em .6em; }
+.rich-content blockquote { border-left: 3px solid #d1d5db; padding-left: .8em; color: #6b7280; margin: 0 0 .6em; }
+
 /* Sandbox editor heights */
 .sandbox-editor { min-height: 400px; }
 .sandbox-preview { min-height: 400px; }

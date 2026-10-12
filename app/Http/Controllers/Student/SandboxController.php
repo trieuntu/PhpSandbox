@@ -33,11 +33,17 @@ class SandboxController extends Controller {
             if (!$assignment || !$assignment->is_active) {
                 return response()->json(['error' => 'Bài tập này hiện không được kích hoạt. Không thể nộp bài.'], 403);
             }
+            if (!$user->isEnrolledIn($assignment->class_id)) {
+                return response()->json(['error' => 'Bạn không thuộc lớp học của bài tập này.'], 403);
+            }
             $data['assignment_id'] = $contextId;
         } elseif ($contextType === 'exam' && $contextId) {
             $exam = Exam::find($contextId);
             if (!$exam || !$exam->is_active) {
                 return response()->json(['error' => 'Kỳ thi này hiện không hoạt động.'], 403);
+            }
+            if (!$user->isEnrolledIn($exam->class_id)) {
+                return response()->json(['error' => 'Bạn không thuộc lớp học của kỳ thi này.'], 403);
             }
             $data['exam_id'] = $contextId;
         }

@@ -5,6 +5,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use App\Models\Exam;
 use App\Models\Classes;
+use App\Support\HtmlSanitizer;
 
 class ExamController extends Controller {
     public function index() {
@@ -29,6 +30,7 @@ class ExamController extends Controller {
         ]);
         $data['created_by'] = Auth::id();
         $data['is_active'] = $request->boolean('is_active', true);
+        $data['instructions'] = HtmlSanitizer::clean($data['instructions'] ?? null);
         Exam::create($data);
         return redirect()->route('admin.exams.index')->with('success', 'Exam created.');
     }
@@ -58,6 +60,7 @@ class ExamController extends Controller {
             'time_limit_minutes' => 'nullable|integer|min:1',
         ]);
         $data['is_active'] = $request->boolean('is_active', true);
+        $data['instructions'] = HtmlSanitizer::clean($data['instructions'] ?? null);
         $exam->update($data);
         return redirect()->route('admin.exams.index')->with('success', 'Exam updated.');
     }

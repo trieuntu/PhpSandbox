@@ -11,9 +11,29 @@ class User extends Authenticatable
     use HasFactory, Notifiable;
 
     protected $fillable = [
-        'student_id', 'name', 'email', 'password', 'role', 'is_active',
+        'student_id', 'last_name', 'first_name', 'name', 'email', 'password', 'role', 'is_active',
         'sandbox_db_name', 'sandbox_db_user', 'sandbox_db_pass', 'last_active_at',
     ];
+
+    protected static function booted(): void
+    {
+        // Keep the legacy `name` column in sync with last_name/first_name.
+        static::saving(function (User $user) {
+            if ($user->isDirty(['last_name', 'first_name'])) {
+                $user->name = trim(($user->last_name ?? '') . ' ' . ($user->first_name ?? ''));
+            } elseif ($user->isDirty('name')) {
+                [$user->last_name, $user->first_name] = self::splitName((string) $user->name);
+            }
+        });
+    }
+
+    /** @return array{0:string,1:string} [last_name, first_name] */
+    public static function splitName(string $full): array
+    {
+        $full = trim(preg_replace('/\s+/u', ' ', $full));
+        $pos = mb_strrpos($full, ' ');
+        return $pos === false ? ['', $full] : [mb_substr($full, 0, $pos), mb_substr($full, $pos + 1)];
+    }
 
     protected $hidden = ['password', 'remember_token', 'sandbox_db_pass'];
 
@@ -32,5 +52,10 @@ class User extends Authenticatable
 
     public function isAdmin(): bool { return $this->role === 'admin'; }
     public function isStudent(): bool { return $this->role === 'student'; }
+
+    public function isEnrolledIn(int $classId): bool
+    {
+        return $this->isAdmin() || $this->enrollments()->where('class_id', $classId)->exists();
+    }
     public function hasSandboxDatabase(): bool { return $this->sandbox_db_name !== null; }
 }

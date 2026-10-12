@@ -40,7 +40,7 @@ class LogController extends Controller {
         }
         
         $logs = $query->paginate(50);
-        $users = User::orderBy('name')->get();
+        $users = User::orderBy('first_name')->orderBy('last_name')->get();
         $actions = Cache::remember('log_action_types', 600, fn () =>
             ActivityLog::distinct()->pluck('action')->sort()->values()
         );

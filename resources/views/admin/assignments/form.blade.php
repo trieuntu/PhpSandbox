@@ -39,9 +39,7 @@
 
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-1">Hướng dẫn / Đề bài</label>
-                    <textarea name="instructions" rows="8"
-                        placeholder="Nhập mô tả bài tập, yêu cầu, ví dụ..."
-                        class="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 font-mono">{{ old('instructions', $assignment->instructions ?? '') }}</textarea>
+                    <textarea name="instructions" rows="12" class="rich-editor">{{ old('instructions', isset($assignment) ? \App\Support\HtmlSanitizer::render($assignment->instructions) : '') }}</textarea>
                 </div>
 
                 <div>
@@ -72,4 +70,5 @@
         </form>
     </div>
 </div>
+@include('partials._rich_editor')
 @endsection

@@ -39,6 +39,7 @@
     <table class="w-full text-sm">
         <thead class="bg-gray-50 border-b border-gray-200">
             <tr>
+                <th class="text-left px-4 py-3 font-medium text-gray-600">Họ và tên đệm</th>
                 <th class="text-left px-4 py-3 font-medium text-gray-600">Tên</th>
                 <th class="text-left px-4 py-3 font-medium text-gray-600">Email</th>
                 <th class="text-left px-4 py-3 font-medium text-gray-600">Mã SV</th>
@@ -51,8 +52,9 @@
         <tbody class="divide-y divide-gray-100">
             @forelse($users as $user)
             <tr class="hover:bg-gray-50 transition">
+                <td class="px-4 py-3 text-gray-800">{{ $user->last_name }}</td>
                 <td class="px-4 py-3">
-                    <p class="font-medium text-gray-800">{{ $user->name }}</p>
+                    <p class="font-medium text-gray-800">{{ $user->first_name }}</p>
                 </td>
                 <td class="px-4 py-3 text-gray-600">{{ $user->email }}</td>
                 <td class="px-4 py-3 text-gray-600 font-mono text-xs">{{ $user->student_id ?? '—' }}</td>
@@ -78,7 +80,7 @@
             </tr>
             @empty
             <tr>
-                <td colspan="7" class="px-4 py-10 text-center text-gray-400">Không tìm thấy người dùng nào</td>
+                <td colspan="8" class="px-4 py-10 text-center text-gray-400">Không tìm thấy người dùng nào</td>
             </tr>
             @endforelse
         </tbody>

@@ -45,14 +45,59 @@
         <div class="px-4 py-3 border-b border-gray-100">
             <h2 class="font-semibold text-gray-700">Sinh viên ({{ $class->students->count() }})</h2>
         </div>
+        <div class="px-4 py-3 border-b border-gray-100 space-y-3" x-data="studentPicker('{{ route('admin.classes.students.search', $class) }}')">
+            <form method="POST" action="{{ route('admin.classes.students.store', $class) }}" @submit="if(!selected.length) $event.preventDefault()">
+                @csrf
+                <div class="relative">
+                    <input type="text" x-model="query" @input.debounce.300ms="search()" autocomplete="off"
+                        placeholder="Tìm theo tên, MSSV hoặc email..."
+                        class="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    <div x-show="results.length" x-cloak class="absolute z-10 mt-1 w-full bg-white border border-gray-200 rounded shadow max-h-48 overflow-y-auto">
+                        <template x-for="u in results" :key="u.id">
+                            <button type="button" @click="add(u)" class="w-full text-left px-3 py-1.5 text-sm hover:bg-gray-50">
+                                <span x-text="u.name"></span>
+                                <span class="text-xs text-gray-400 font-mono" x-text="u.student_id || u.email"></span>
+                            </button>
+                        </template>
+                    </div>
+                </div>
+                <div class="flex flex-wrap gap-1 mt-2">
+                    <template x-for="u in selected" :key="u.id">
+                        <span class="inline-flex items-center gap-1 bg-blue-50 text-blue-700 text-xs px-2 py-1 rounded">
+                            <span x-text="u.name"></span>
+                            <input type="hidden" name="student_ids[]" :value="u.id">
+                            <button type="button" @click="remove(u.id)" class="hover:text-red-600">&times;</button>
+                        </span>
+                    </template>
+                </div>
+                <button type="submit" x-show="selected.length" x-cloak class="mt-2 bg-blue-600 text-white px-3 py-1.5 rounded text-sm hover:bg-blue-700">Thêm vào lớp</button>
+            </form>
+
+            <details>
+                <summary class="text-xs text-blue-600 cursor-pointer">Thêm hàng loạt theo danh sách MSSV / email</summary>
+                <form method="POST" action="{{ route('admin.classes.students.store', $class) }}" class="mt-2">
+                    @csrf
+                    <textarea name="identifiers" rows="4" placeholder="Mỗi dòng hoặc cách nhau bằng dấu phẩy: SV001, sv002@email.com..."
+                        class="w-full border border-gray-300 rounded px-3 py-2 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-blue-500"></textarea>
+                    <button type="submit" class="mt-2 bg-blue-600 text-white px-3 py-1.5 rounded text-sm hover:bg-blue-700">Thêm danh sách</button>
+                </form>
+            </details>
+        </div>
         <div class="divide-y divide-gray-50 max-h-64 overflow-y-auto">
-            @forelse($class->students as $student)
+            @forelse($class->students->sortBy(['first_name', 'last_name']) as $student)
             <div class="px-4 py-2 flex justify-between items-center hover:bg-gray-50">
                 <div>
-                    <p class="text-sm font-medium text-gray-800">{{ $student->name }}</p>
+                    <p class="text-sm font-medium text-gray-800">{{ $student->last_name }} <span class="font-semibold">{{ $student->first_name }}</span></p>
                     <p class="text-xs text-gray-400">{{ $student->email }}</p>
                 </div>
-                <span class="text-xs font-mono text-gray-400">{{ $student->student_id }}</span>
+                <div class="flex items-center gap-3">
+                    <span class="text-xs font-mono text-gray-400">{{ $student->student_id }}</span>
+                    <form method="POST" action="{{ route('admin.classes.students.destroy', [$class, $student]) }}"
+                        onsubmit="return confirm('Xóa sinh viên này khỏi lớp?')">
+                        @csrf @method('DELETE')
+                        <button type="submit" class="text-xs text-red-600 hover:underline">Xóa</button>
+                    </form>
+                </div>
             </div>
             @empty
             <div class="px-4 py-6 text-center text-gray-400 text-sm">Chưa có sinh viên</div>
@@ -142,4 +187,22 @@
         </div>
     </div>
 </div>
+@push('scripts')
+<style>[x-cloak]{display:none !important}</style>
+<script>
+document.addEventListener('alpine:init', () => {
+    Alpine.data('studentPicker', (searchUrl) => ({
+        query: '', results: [], selected: [],
+        async search() {
+            const q = this.query.trim();
+            if (!q) { this.results = []; return; }
+            const res = await fetch(searchUrl + '?q=' + encodeURIComponent(q), { headers: { 'Accept': 'application/json' } });
+            this.results = res.ok ? (await res.json()).filter(u => !this.selected.some(s => s.id === u.id)) : [];
+        },
+        add(u) { this.selected.push(u); this.results = []; this.query = ''; },
+        remove(id) { this.selected = this.selected.filter(s => s.id !== id); },
+    }));
+});
+</script>
+@endpush
 @endsection

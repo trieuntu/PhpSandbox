@@ -5,6 +5,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use App\Models\Assignment;
 use App\Models\Classes;
+use App\Support\HtmlSanitizer;
 
 class AssignmentController extends Controller {
     public function index(Classes $class) {
@@ -24,6 +25,7 @@ class AssignmentController extends Controller {
         $data['class_id'] = $class->id;
         $data['created_by'] = Auth::id();
         $data['is_active'] = $request->boolean('is_active', true);
+        $data['instructions'] = HtmlSanitizer::clean($data['instructions'] ?? null);
         Assignment::create($data);
         return redirect()->route('admin.classes.show', $class)->with('success', 'Assignment created.');
     }
@@ -43,6 +45,7 @@ class AssignmentController extends Controller {
             'due_at' => 'nullable|date',
         ]);
         $data['is_active'] = $request->boolean('is_active', true);
+        $data['instructions'] = HtmlSanitizer::clean($data['instructions'] ?? null);
         $assignment->update($data);
         return redirect()->route('admin.classes.show', $class)->with('success', 'Assignment updated.');
     }

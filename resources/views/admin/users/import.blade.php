@@ -22,8 +22,9 @@
         <h2 class="font-semibold text-gray-700 mb-3">Định dạng file CSV</h2>
         <p class="text-sm text-gray-500 mb-2">File CSV phải có header row với các cột:</p>
         <div class="bg-gray-50 rounded p-3 font-mono text-sm text-gray-700">
-            name,email,student_id,password
+            last_name,first_name,email,student_id,password
         </div>
+        <p class="text-xs text-gray-400 mt-2">Cột <code>last_name</code> là họ và tên đệm, <code>first_name</code> là tên. Header cũ <code>name,email,student_id,password</code> vẫn được hỗ trợ (tự tách từ cuối cùng là tên).</p>
         <p class="text-xs text-gray-400 mt-2">Nếu bỏ trống <code>password</code>, mật khẩu mặc định là <code>password123</code>.</p>
     </div>
 

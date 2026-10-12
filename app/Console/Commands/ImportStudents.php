@@ -27,11 +27,13 @@ class ImportStudents extends Command {
             $data = array_combine($headers, $row);
             
             try {
+                $nameFields = isset($data['first_name']) || isset($data['last_name'])
+                    ? ['last_name' => trim($data['last_name'] ?? ''), 'first_name' => trim($data['first_name'] ?? '')]
+                    : ['name' => $data['name']];
                 $user = User::firstOrCreate(
                     ['email' => $data['email']],
-                    [
+                    $nameFields + [
                         'student_id' => $data['student_id'] ?? null,
-                        'name' => $data['name'],
                         'password' => Hash::make($data['password'] ?? 'password123'),
                         'role' => 'student',
                         'is_active' => true,

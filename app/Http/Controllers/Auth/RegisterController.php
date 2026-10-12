@@ -16,14 +16,16 @@ class RegisterController extends Controller {
     public function register(Request $request, DatabaseProvisionService $dbService) {
         $data = $request->validate([
             'student_id' => 'nullable|string|max:50|unique:users,student_id',
-            'name' => 'required|string|max:255',
+            'last_name' => 'required|string|max:150',
+            'first_name' => 'required|string|max:100',
             'email' => 'required|email|unique:users,email',
             'password' => 'required|string|min:8|confirmed',
         ]);
         
         $user = User::create([
             'student_id' => $data['student_id'] ?? null,
-            'name' => $data['name'],
+            'last_name' => trim($data['last_name']),
+            'first_name' => trim($data['first_name']),
             'email' => $data['email'],
             'password' => Hash::make($data['password']),
             'role' => 'student',

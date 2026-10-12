@@ -38,7 +38,7 @@
 @if($exam->instructions)
 <div class="bg-white border border-gray-200 rounded-lg p-4 mb-6">
     <p class="font-medium text-gray-700 mb-2">Đề thi / Hướng dẫn:</p>
-    <div class="text-sm text-gray-600 whitespace-pre-line">{{ $exam->instructions }}</div>
+    <div class="text-sm text-gray-600 rich-content">{!! \App\Support\HtmlSanitizer::render($exam->instructions) !!}</div>
 </div>
 @endif
 
