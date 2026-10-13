@@ -62,7 +62,21 @@ class ExamController extends Controller {
         $data['is_active'] = $request->boolean('is_active', true);
         $data['instructions'] = HtmlSanitizer::clean($data['instructions'] ?? null);
         $exam->update($data);
-        return redirect()->route('admin.exams.index')->with('success', 'Exam updated.');
+
+        // Synchronize expires_at for all ongoing (unsubmitted) attempts
+        if ($exam->time_limit_minutes) {
+            $exam->attempts()->whereNull('submitted_at')->get()->each(function ($attempt) use ($exam) {
+                $newExpires = $attempt->started_at->copy()->addMinutes($exam->time_limit_minutes);
+                if ($exam->ends_at && $newExpires->isAfter($exam->ends_at)) {
+                    $newExpires = $exam->ends_at;
+                }
+                $attempt->update(['expires_at' => $newExpires]);
+            });
+        } elseif ($exam->ends_at) {
+            $exam->attempts()->whereNull('submitted_at')->update(['expires_at' => $exam->ends_at]);
+        }
+
+        return redirect()->route('admin.exams.index')->with('success', 'Đã cập nhật bài thi và đồng bộ thời gian làm bài cho các sinh viên đang thi.');
     }
     
     public function destroy(Exam $exam) {
