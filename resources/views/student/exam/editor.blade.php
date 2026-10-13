@@ -23,7 +23,7 @@ if ($lastSubmission) {
     }
 }
 ?>
-<div x-data="examApp({{ $exam->id }}, {{ $remainingSeconds ?? 'null' }})" x-init="init()" class="workspace-page">
+<div x-data="examApp({{ $exam->id }}, {{ $remainingSeconds ?? 'null' }})" class="workspace-page">
     <!-- Header with Timer -->
     <div class="flex flex-wrap justify-between items-center gap-2 mb-3 flex-shrink-0">
         <div>
@@ -160,17 +160,24 @@ function examApp(examId, initialSeconds) {
         previewUrl: '',
         executionTime: '',
         remainingSeconds: initialSeconds,
+        timer: null,
+        endTime: (initialSeconds !== null && initialSeconds !== undefined) ? Date.now() + (initialSeconds * 1000) : null,
 
         init() {
-            if (this.remainingSeconds !== null) {
-                setInterval(() => {
-                    if (this.remainingSeconds > 0) {
-                        this.remainingSeconds--;
-                        if (this.remainingSeconds === 0) this.submitExam(true);
+            window.examAppInstance = this;
+            if (this.remainingSeconds !== null && !this.timer) {
+                this.timer = setInterval(() => {
+                    if (this.endTime !== null) {
+                        const remaining = Math.max(0, Math.round((this.endTime - Date.now()) / 1000));
+                        this.remainingSeconds = remaining;
+                        if (this.remainingSeconds <= 0) {
+                            clearInterval(this.timer);
+                            this.timer = null;
+                            this.submitExam(true);
+                        }
                     }
                 }, 1000);
             }
-            window.examAppInstance = this;
         },
 
         formatTime(seconds) {

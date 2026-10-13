@@ -21,7 +21,7 @@
     @vite(['resources/css/app.css', 'resources/js/app.js'])
     @stack('styles')
 </head>
-<body class="bg-gray-100 font-sans min-h-screen flex flex-col" x-data="heartbeatApp()" x-init="init()">
+<body class="bg-gray-100 font-sans min-h-screen flex flex-col" x-data="heartbeatApp()">
 
 <!-- Inactivity Warning Banner -->
 <div x-show="showWarning" x-cloak class="fixed top-0 left-0 right-0 z-50 bg-yellow-500 text-white px-4 py-2 text-center">
@@ -141,13 +141,15 @@ function heartbeatApp() {
         showWarning: false,
         remainingSeconds: 0,
         heartbeatTimeout: null,
+        heartbeatInterval: null,
 
         init() {
+            if (this.heartbeatInterval) return;
             window.addEventListener('mousemove', () => this.resetHeartbeat());
             window.addEventListener('keypress', () => this.resetHeartbeat());
 
             // Heartbeat every 60 seconds
-            setInterval(() => { this.sendHeartbeat(); }, 60000);
+            this.heartbeatInterval = setInterval(() => { this.sendHeartbeat(); }, 60000);
         },
 
         resetHeartbeat() {
