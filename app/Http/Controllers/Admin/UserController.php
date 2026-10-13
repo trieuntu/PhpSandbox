@@ -6,6 +6,7 @@ use Illuminate\Support\Facades\Hash;
 use App\Models\User;
 use App\Services\DatabaseProvisionService;
 use App\Services\ActivityLogger;
+use App\Services\UserCsvImportService;
 
 class UserController extends Controller {
     public function index(Request $request) {
@@ -103,38 +104,45 @@ class UserController extends Controller {
         return view('admin.users.import');
     }
 
-    public function import(Request $request, DatabaseProvisionService $dbService) {
-        $request->validate(['csv' => 'required|file|mimes:csv,txt']);
+    public function import(Request $request, UserCsvImportService $importService) {
+        $request->validate([
+            'csv' => 'nullable|file|mimes:csv,txt',
+            'csv_file' => 'nullable|file|mimes:csv,txt',
+        ]);
         
-        $file = $request->file('csv');
-        $handle = fopen($file->getPathname(), 'r');
-        $headers = fgetcsv($handle);
-        
-        $imported = 0;
-        while ($row = fgetcsv($handle)) {
-            $data = array_combine($headers, $row);
-            try {
-                $nameFields = isset($data['first_name']) || isset($data['last_name'])
-                    ? ['last_name' => trim($data['last_name'] ?? ''), 'first_name' => trim($data['first_name'] ?? '')]
-                    : ['name' => $data['name']];
-                $user = User::firstOrCreate(
-                    ['email' => $data['email']],
-                    $nameFields + [
-                        'student_id' => $data['student_id'] ?? null,
-                        'password' => Hash::make($data['password'] ?? 'password123'),
-                        'role' => 'student',
-                        'is_active' => true,
-                    ]
-                );
-                if ($user->wasRecentlyCreated) {
-                    try { $dbService->provision($user); } catch (\Exception $e) {}
-                    $imported++;
-                }
-            } catch (\Exception $e) {}
+        $file = $request->file('csv') ?? $request->file('csv_file');
+        if (!$file) {
+            return back()->with('error', 'Vui lòng chọn file CSV để import.');
         }
-        fclose($handle);
+
+        if (function_exists('set_time_limit')) {
+            @set_time_limit(300);
+        }
+
+        $result = $importService->import($file->getPathname());
         
-        return redirect()->route('admin.users.index')->with('success', "Imported {$imported} students.");
+        ActivityLogger::log('users_imported', "Admin imported {$result['imported']} students from CSV ({$result['skipped']} skipped).");
+
+        $redirect = redirect()->route('admin.users.index');
+
+        if ($result['imported'] === 0) {
+            $errorMsg = 'Không import được sinh viên nào.';
+            if (!empty($result['errors'])) {
+                $errorMsg .= ' Chi tiết lỗi: ' . implode(' | ', array_slice($result['errors'], 0, 5));
+            }
+            return $redirect->with('error', $errorMsg);
+        }
+
+        $msg = "Đã import thành công {$result['imported']} sinh viên.";
+        if ($result['skipped'] > 0) {
+            $msg .= " ({$result['skipped']} dòng bị bỏ qua hoặc đã tồn tại).";
+        }
+
+        if (!empty($result['errors'])) {
+            return $redirect->with('warning', $msg . ' Lỗi một số dòng: ' . implode(' | ', array_slice($result['errors'], 0, 3)));
+        }
+
+        return $redirect->with('success', $msg);
     }
     
     public function toggleRegistration(Request $request) {

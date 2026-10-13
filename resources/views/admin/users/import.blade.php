@@ -12,20 +12,24 @@
     @if(session('success'))
         <div class="bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded mb-4">{{ session('success') }}</div>
     @endif
-    @if($errors->any())
-        <div class="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded mb-4">
-            <ul class="list-disc list-inside">@foreach($errors->all() as $e)<li>{{ $e }}</li>@endforeach</ul>
-        </div>
+    @if(session('warning'))
+        <div class="bg-yellow-50 border border-yellow-200 text-yellow-800 px-4 py-3 rounded mb-4">{{ session('warning') }}</div>
+    @endif
+    @if(session('error'))
+        <div class="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded mb-4">{{ session('error') }}</div>
     @endif
 
     <div class="bg-white rounded-xl shadow p-6 mb-6">
         <h2 class="font-semibold text-gray-700 mb-3">Định dạng file CSV</h2>
-        <p class="text-sm text-gray-500 mb-2">File CSV phải có header row với các cột:</p>
-        <div class="bg-gray-50 rounded p-3 font-mono text-sm text-gray-700">
-            last_name,first_name,email,student_id,password
+        <p class="text-sm text-gray-500 mb-2">Hệ thống hỗ trợ cả <strong>file có dòng tiêu đề</strong> hoặc <strong>không có dòng tiêu đề</strong>:</p>
+        <div class="bg-gray-50 rounded p-3 font-mono text-sm text-gray-700 mb-2">
+            Họ đệm, Tên, Email, MSSV, Mật khẩu
         </div>
-        <p class="text-xs text-gray-400 mt-2">Cột <code>last_name</code> là họ và tên đệm, <code>first_name</code> là tên. Header cũ <code>name,email,student_id,password</code> vẫn được hỗ trợ (tự tách từ cuối cùng là tên).</p>
-        <p class="text-xs text-gray-400 mt-2">Nếu bỏ trống <code>password</code>, mật khẩu mặc định là <code>password123</code>.</p>
+        <div class="bg-gray-50 rounded p-3 font-mono text-xs text-gray-500">
+            Ví dụ: Huỳnh Triều,An,an.ht.65cntt@ntu.edu.vn,65130011,65130011
+        </div>
+        <p class="text-xs text-gray-500 mt-3">Hỗ trợ nhận diện tự động: Header tiếng Việt/Anh (<code>last_name,first_name,email,student_id,password</code> hoặc <code>name,email,student_id,password</code>), danh sách xuất từ cổng đào tạo NTU, UTF-8 BOM, phân cách bằng dấu phẩy (<code>,</code>) hoặc chấm phẩy (<code>;</code>).</p>
+        <p class="text-xs text-gray-500 mt-1">Nếu bỏ trống <code>password</code>, mật khẩu mặc định sẽ là MSSV hoặc <code>password123</code>.</p>
     </div>
 
     <div class="bg-white rounded-xl shadow p-6">

@@ -47,16 +47,32 @@ class DatabaseProvisionService {
         $user->update(['sandbox_db_name' => null, 'sandbox_db_user' => null, 'sandbox_db_pass' => null]);
     }
     
+    private ?\PDO $adminPdo = null;
+
     private function getAdminConnection(): \PDO {
+        if ($this->adminPdo !== null) {
+            try {
+                $this->adminPdo->query('SELECT 1');
+                return $this->adminPdo;
+            } catch (\Throwable $e) {
+                $this->adminPdo = null;
+            }
+        }
+
         $host = config('sandbox.db_host', env('DB_HOST', '127.0.0.1'));
         $user = config('sandbox.db_admin_user');
         $pass = config('sandbox.db_admin_pass');
         
-        return new \PDO(
+        $this->adminPdo = new \PDO(
             "mysql:host={$host};port=3306;charset=utf8mb4",
             $user,
             $pass,
-            [\PDO::ATTR_ERRMODE => \PDO::ERRMODE_EXCEPTION]
+            [
+                \PDO::ATTR_ERRMODE => \PDO::ERRMODE_EXCEPTION,
+                \PDO::ATTR_TIMEOUT => 5,
+            ]
         );
+
+        return $this->adminPdo;
     }
 }

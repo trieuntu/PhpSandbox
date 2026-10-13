@@ -102,8 +102,9 @@
         <form method="POST" action="{{ route('admin.users.import') }}" enctype="multipart/form-data">
             @csrf
             <div class="mb-4">
-                <p class="text-sm text-gray-600 mb-2">File CSV cần có các cột: <code class="bg-gray-100 px-1 rounded">name, email, student_id, password</code></p>
-                <input type="file" name="csv_file" accept=".csv" required
+                <p class="text-sm text-gray-600 mb-1">Hỗ trợ file CSV có hoặc không có dòng tiêu đề:</p>
+                <p class="text-xs text-gray-500 mb-3 font-mono bg-gray-50 p-2 rounded">Họ đệm, Tên, Email, MSSV, Mật khẩu<br>hoặc: last_name, first_name, email, student_id, password</p>
+                <input type="file" name="csv" accept=".csv,.txt" required
                     class="w-full border border-gray-300 rounded px-3 py-2 text-sm">
             </div>
             <div class="flex gap-3">
