@@ -83,26 +83,70 @@ class SandboxService {
      * Local fallback: run PHP code via proc_open in a restricted env (dev only).
      */
     /**
-     * Public method for re-executing code with POST data (form submit simulation).
+     * Public method for re-executing code with POST/GET data (form submit simulation).
      * Supports multi-file: pass $files as ['index.php'=>'...','abc.php'=>'...']
      * and $targetFile as the file to execute (e.g., 'abc.php').
      */
-    public function executeWithPost(User $user, string $code, array $postData, string $contextType = 'free', ?int $contextId = null, array $files = [], string $targetFile = ''): array {
-        return $this->executeLocally($user, $code, $contextType, $contextId, $postData, $files, $targetFile);
+    public function executeWithPost(User $user, string $code, array $postData, string $contextType = 'free', ?int $contextId = null, array $files = [], string $targetFile = '', string $httpMethod = 'POST'): array {
+        return $this->executeLocally($user, $code, $contextType, $contextId, $postData, $files, $targetFile, $httpMethod);
     }
 
-    private function buildInitLine(array $postData): string {
-        $method  = empty($postData) ? 'GET' : 'POST';
-        $encoded = base64_encode(serialize($postData));
+    private function buildInitLine(array $formData, string $httpMethod = 'POST'): string {
+        $method  = in_array(strtoupper($httpMethod), ['GET', 'POST', 'PUT', 'DELETE']) ? strtoupper($httpMethod) : 'POST';
+        $encoded = base64_encode(serialize($formData));
+
+        if ($method === 'GET') {
+            return '<?php'
+                . ' $_SERVER["PHP_SELF"]="/";'
+                . '$_SERVER["SCRIPT_NAME"]="/";'
+                . '$_SERVER["REQUEST_METHOD"]="GET";'
+                . '$_SERVER["HTTP_HOST"]="localhost";'
+                . '$_GET=unserialize(base64_decode("' . $encoded . '"));'
+                . '$_POST=[];'
+                . '$_REQUEST=$_GET;'
+                . ' ?>' . "\n";
+        }
+
         return '<?php'
             . ' $_SERVER["PHP_SELF"]="/";'
             . '$_SERVER["SCRIPT_NAME"]="/";'
-            . '$_SERVER["REQUEST_METHOD"]="' . $method . '";'
+            . '$_SERVER["REQUEST_METHOD"]="POST";'
             . '$_SERVER["HTTP_HOST"]="localhost";'
             . '$_POST=unserialize(base64_decode("' . $encoded . '"));'
             . '$_GET=[];'
             . '$_REQUEST=$_POST;'
             . ' ?>' . "\n";
+    }
+
+    /**
+     * Generate PHP code that initializes the student's personal sandbox database connection.
+     */
+    private function buildStudentDbBootstrap(User $user): string
+    {
+        if (!$user->sandbox_db_name || !$user->sandbox_db_user) {
+            return '';
+        }
+        $dbHost = config('sandbox.db_host', env('DB_HOST', '127.0.0.1'));
+        $dbName = $user->sandbox_db_name;
+        $dbUser = $user->sandbox_db_user;
+        $dbPass = $user->sandbox_db_pass ? decrypt($user->sandbox_db_pass) : '';
+
+        $exportedHost = var_export($dbHost, true);
+        $exportedName = var_export($dbName, true);
+        $exportedUser = var_export($dbUser, true);
+        $exportedPass = var_export($dbPass, true);
+
+        return '<?php' . "\n"
+            . 'try {' . "\n"
+            . '    $db = new PDO("mysql:host=" . ' . $exportedHost . ' . ";port=3306;dbname=" . ' . $exportedName . ' . ";charset=utf8mb4", ' . $exportedUser . ', ' . $exportedPass . ');' . "\n"
+            . '    $db->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);' . "\n"
+            . '    $db->setAttribute(PDO::ATTR_DEFAULT_FETCH_MODE, PDO::FETCH_ASSOC);' . "\n"
+            . '} catch (PDOException $e) {}' . "\n"
+            . 'if (function_exists(\'mysqli_connect\')) {' . "\n"
+            . '    $conn = @mysqli_connect(' . $exportedHost . ', ' . $exportedUser . ', ' . $exportedPass . ', ' . $exportedName . ', 3306);' . "\n"
+            . '    if ($conn) { mysqli_set_charset($conn, \'utf8mb4\'); }' . "\n"
+            . '}' . "\n"
+            . '?>' . "\n";
     }
 
     /**
@@ -136,15 +180,16 @@ class SandboxService {
             . '?>' . "\n";
     }
 
-    private function executeLocally(User $user, string $code, string $contextType, ?int $contextId, array $postData = [], array $files = [], string $targetFile = ''): array {
+    private function executeLocally(User $user, string $code, string $contextType, ?int $contextId, array $postData = [], array $files = [], string $targetFile = '', string $httpMethod = 'POST'): array {
         $memLimit    = config('sandbox.memory_limit_mb', 64) . 'M';
         $maxTime     = (int) config('sandbox.max_execution_time', 5);
         // PHP_BINARY may point to php-fpm in production containers; use php CLI instead
         $php         = is_executable('/usr/local/bin/php') ? '/usr/local/bin/php' : PHP_BINARY;
         $disabledFns = implode(',', config('sandbox.disabled_functions', []));
-        $initLine    = $this->buildInitLine($postData);
+        $initLine    = $this->buildInitLine($postData, $httpMethod);
         $sharedDbsBootstrap = $this->buildSharedDbsBootstrap();
-        $preamble    = $initLine . $sharedDbsBootstrap;
+        $studentDbBootstrap = $this->buildStudentDbBootstrap($user);
+        $preamble    = $initLine . $sharedDbsBootstrap . $studentDbBootstrap;
         $tmpDir      = null;
 
         if (!empty($files)) {

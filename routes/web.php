@@ -110,6 +110,7 @@ Route::prefix('admin')->name('admin.')->middleware(['auth', 'admin'])->group(fun
     // Submissions
     Route::get('/submissions', [SubmissionController::class, 'index'])->name('submissions.index');
     Route::get('/submissions/{submission}', [SubmissionController::class, 'show'])->name('submissions.show');
+    Route::post('/submissions/{submission}/rerun', [SubmissionController::class, 'rerun'])->name('submissions.rerun');
     Route::get('/submissions/{submission}/download', [SubmissionController::class, 'download'])->name('submissions.download');
     Route::get('/submissions/{submission}/download-output', [SubmissionController::class, 'downloadOutput'])->name('submissions.download-output');
 

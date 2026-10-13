@@ -5,6 +5,7 @@ use Illuminate\Http\Request;
 use App\Models\Submission;
 use App\Models\User;
 use App\Models\Exam;
+use App\Services\SandboxService;
 
 class SubmissionController extends Controller {
     public function index(Request $request) {
@@ -26,6 +27,27 @@ class SubmissionController extends Controller {
     public function show(Submission $submission) {
         $submission->load('user', 'assignment', 'exam');
         return view('admin.submissions.show', compact('submission'));
+    }
+
+    public function rerun(Submission $submission, SandboxService $sandboxService) {
+        $user = $submission->user;
+        $contextType = $submission->assignment_id ? 'assignment' : ($submission->exam_id ? 'exam' : 'free');
+        $contextId = $submission->assignment_id ?: ($submission->exam_id ?: null);
+
+        $files = $submission->files ?? [];
+        $result = $files
+            ? $sandboxService->executeWithPost($user, $submission->code, [], $contextType, $contextId, $files, '', 'GET')
+            : $sandboxService->execute($user, $submission->code, $contextType, $contextId);
+
+        $submission->update([
+            'output_html' => $result['output'] ?? '',
+            'output_errors' => $result['errors'] ?? '',
+            'execution_status' => $result['status'] ?? 'error',
+            'execution_time_ms' => $result['execution_time_ms'] ?? 0,
+            'memory_used_kb' => $result['memory_kb'] ?? 0,
+        ]);
+
+        return back()->with('success', 'Đã chạy lại code sinh viên thành công.');
     }
     
     public function download(Submission $submission) {

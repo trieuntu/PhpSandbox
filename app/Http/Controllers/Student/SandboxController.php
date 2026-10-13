@@ -72,44 +72,65 @@ class SandboxController extends Controller {
     
     public function preview(int $submissionId) {
         $user = Auth::user();
-        $submission = Submission::where('id', $submissionId)
-            ->where(function($q) use ($user) {
-                $q->where('user_id', $user->id);
-                if ($user->role === 'admin') $q->orWhere('id', '>', 0);
-            })
-            ->firstOrFail();
-        
-        $html = $this->buildPreviewHtml($submission->output_html ?? '', $submissionId);
-        
+        $query = Submission::where('id', $submissionId);
+        if ($user->role !== 'admin') {
+            $query->where('user_id', $user->id);
+        }
+        $submission = $query->firstOrFail();
+
+        $output = $submission->output_html ?? '';
+        if (trim($output) === '' && !empty($submission->output_errors)) {
+            $output = "<pre style='color:#dc2626;background:#fef2f2;padding:12px;border:1px solid #fecaca;border-radius:6px;font-family:monospace;font-size:13px;white-space:pre-wrap;'>"
+                . htmlspecialchars($submission->output_errors, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8')
+                . "</pre>";
+        }
+
+        $html = $this->buildPreviewHtml($output, $submissionId);
+
         return response($html)
             ->header('Content-Type', 'text/html; charset=utf-8')
             ->header('X-Frame-Options', 'SAMEORIGIN');
     }
 
     /**
-     * Re-execute original code with form POST data injected (supports interactive forms).
+     * Re-execute original code with form POST/GET data injected (supports interactive forms).
      */
     public function executeForm(Request $request, int $submissionId, SandboxService $sandboxService) {
         $user = Auth::user();
-        $submission = Submission::where('id', $submissionId)
-            ->where('user_id', $user->id)
-            ->firstOrFail();
+        $query = Submission::with('user')->where('id', $submissionId);
+        if ($user->role !== 'admin') {
+            $query->where('user_id', $user->id);
+        }
+        $submission = $query->firstOrFail();
 
-        $postData   = array_map(fn($v) => $v ?? '', $request->except(['_token', '_method', '__sb_target__']));
+        $method     = strtoupper((string)$request->input('__sb_method__', 'POST'));
         $targetFile = (string) ($request->input('__sb_target__') ?? '');
+        $postData   = array_map(fn($v) => $v ?? '', $request->except(['_token', '_method', '__sb_target__', '__sb_method__']));
         $files      = $submission->files ?? [];
 
+        $contextType = $submission->assignment_id ? 'assignment' : ($submission->exam_id ? 'exam' : 'free');
+        $contextId   = $submission->assignment_id ?: ($submission->exam_id ?: null);
+        $execUser    = $submission->user ?? $user;
+
         $result = $sandboxService->executeWithPost(
-            $user,
+            $execUser,
             $submission->code,
             $postData,
-            'free',
-            null,
+            $contextType,
+            $contextId,
             $files,
-            $targetFile
+            $targetFile,
+            $method
         );
 
-        $html = $this->buildPreviewHtml($result['output'] ?? '', $submissionId);
+        $output = $result['output'] ?? '';
+        if (trim($output) === '' && !empty($result['errors'])) {
+            $output = "<pre style='color:#dc2626;background:#fef2f2;padding:12px;border:1px solid #fecaca;border-radius:6px;font-family:monospace;font-size:13px;white-space:pre-wrap;'>"
+                . htmlspecialchars($result['errors'], ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8')
+                . "</pre>";
+        }
+
+        $html = $this->buildPreviewHtml($output, $submissionId);
 
         return response($html)->header('Content-Type', 'text/html; charset=utf-8');
     }
@@ -147,7 +168,10 @@ class SandboxController extends Controller {
                 var fd=new FormData(f), data={};
                 fd.forEach(function(v,k){ data[k]=v; });
                 // Include the clicked submit button (FormData omits it by default)
-                if(e.submitter && e.submitter.name){ data[e.submitter.name]=e.submitter.value; }
+                if(e.submitter && e.submitter.name){
+                    data[e.submitter.name]=(e.submitter.value!==undefined)?e.submitter.value:'';
+                }
+                var method=(f.getAttribute('method')||'GET').toUpperCase();
                 // Detect form action file (e.g., action="abc.php" → target=abc.php)
                 var action=(f.getAttribute('action')||'').trim();
                 var target='';
@@ -156,14 +180,29 @@ class SandboxController extends Controller {
                     if(last.match(/\.php$/i)) target=last;
                 }
                 data['__sb_target__']=target;
+                data['__sb_method__']=method;
+
+                var btn = e.submitter;
+                if(btn){ btn.disabled = true; btn.style.opacity = '0.7'; }
+
                 var xhr=new XMLHttpRequest();
                 xhr.open('POST','/api/sandbox/execute-form/'+SID,true);
                 xhr.setRequestHeader('Content-Type','application/json');
                 xhr.setRequestHeader('X-CSRF-TOKEN',CSRF);
                 xhr.withCredentials=true;
                 xhr.onload=function(){
-                    if(xhr.status===200){ document.open(); document.write(xhr.responseText); document.close(); }
-                    else{ alert('Error '+xhr.status+': '+xhr.statusText); }
+                    if(xhr.status===200){
+                        document.open();
+                        document.write(xhr.responseText);
+                        document.close();
+                    } else {
+                        if(btn){ btn.disabled = false; btn.style.opacity = '1'; }
+                        alert('Error '+xhr.status+': '+xhr.statusText);
+                    }
+                };
+                xhr.onerror=function(){
+                    if(btn){ btn.disabled = false; btn.style.opacity = '1'; }
+                    alert('Lỗi kết nối tới sandbox');
                 };
                 xhr.send(JSON.stringify(data));
             });
