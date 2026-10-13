@@ -36,12 +36,32 @@ class ExamController extends Controller {
     }
     
     public function show(Exam $exam) {
-        $exam->load('class', 'attempts.user');
+        $exam->load('class');
+
+        $submittedAttempts = \App\Models\ExamAttempt::with('user')
+            ->where('exam_id', $exam->id)
+            ->whereNotNull('submitted_at')
+            ->orderByDesc('submitted_at')
+            ->get();
+
+        $userIds = $submittedAttempts->pluck('user_id');
+        $latest = \App\Models\Submission::where('exam_id', $exam->id)
+            ->whereIn('user_id', $userIds)
+            ->orderByDesc('submitted_at')
+            ->get()
+            ->groupBy('user_id')
+            ->map(fn($g) => $g->first());
+
+        foreach ($submittedAttempts as $attempt) {
+            $attempt->latest_submission = $latest->get($attempt->user_id);
+        }
+
         $submissions = \App\Models\Submission::with('user')
             ->where('exam_id', $exam->id)
             ->orderByDesc('submitted_at')
             ->paginate(20);
-        return view('admin.exams.show', compact('exam', 'submissions'));
+
+        return view('admin.exams.show', compact('exam', 'submittedAttempts', 'submissions'));
     }
     
     public function edit(Exam $exam) {

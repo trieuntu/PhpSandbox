@@ -119,4 +119,116 @@ PHP;
         $response = $this->actingAs($student2)->get(route('sandbox.preview', $submission->id));
         $response->assertNotFound();
     }
+
+    public function test_admin_can_view_submitted_attempts_tab(): void {
+        $admin = User::factory()->create(['role' => 'admin']);
+        $student = User::factory()->create(['role' => 'student', 'name' => 'Tran Thi B', 'student_id' => 'SV007']);
+
+        $class = \App\Models\Classes::create(['name' => 'Lớp 65.CNTT-1', 'created_by' => $admin->id, 'is_active' => true]);
+        $exam = \App\Models\Exam::create([
+            'title' => 'Thi Giua Ky PHP',
+            'class_id' => $class->id,
+            'starts_at' => now()->subDay(),
+            'ends_at' => now()->addDay(),
+            'is_active' => true,
+            'created_by' => $admin->id,
+        ]);
+
+        $attempt = \App\Models\ExamAttempt::create([
+            'exam_id' => $exam->id,
+            'user_id' => $student->id,
+            'started_at' => now()->subMinutes(45),
+            'submitted_at' => now()->subMinutes(5),
+        ]);
+
+        $submission = Submission::create([
+            'user_id' => $student->id,
+            'exam_id' => $exam->id,
+            'code' => '<?php echo "FINAL"; ?>',
+            'output_html' => 'FINAL',
+            'execution_status' => 'success',
+            'submitted_at' => now()->subMinutes(5),
+        ]);
+
+        $response = $this->actingAs($admin)->get(route('admin.submissions.index', ['tab' => 'submitted']));
+
+        $response->assertOk();
+        $response->assertSee('Tran Thi B');
+        $response->assertSee('SV007');
+        $response->assertSee('Thi Giua Ky PHP');
+        $response->assertSee('Chấm bài');
+        $response->assertSee(route('admin.submissions.show', $submission->id));
+    }
+
+    public function test_admin_can_search_submissions_by_student_name(): void {
+        $admin = User::factory()->create(['role' => 'admin']);
+        $student1 = User::factory()->create(['role' => 'student', 'name' => 'Le Van Cuong', 'student_id' => 'SV008']);
+        $student2 = User::factory()->create(['role' => 'student', 'name' => 'Pham Thi Dung', 'student_id' => 'SV009']);
+
+        Submission::create([
+            'user_id' => $student1->id,
+            'code' => '<?php echo "Cuong"; ?>',
+            'output_html' => 'Cuong',
+            'execution_status' => 'success',
+            'submitted_at' => now(),
+        ]);
+
+        Submission::create([
+            'user_id' => $student2->id,
+            'code' => '<?php echo "Dung"; ?>',
+            'output_html' => 'Dung',
+            'execution_status' => 'success',
+            'submitted_at' => now(),
+        ]);
+
+        // Search for Cuong on all tab
+        $response = $this->actingAs($admin)->get(route('admin.submissions.index', ['tab' => 'all', 'search' => 'Cuong']));
+        $response->assertOk();
+        $response->assertSee('Le Van Cuong');
+        $response->assertDontSee('Pham Thi Dung');
+
+        // Search for SV009 on all tab
+        $response2 = $this->actingAs($admin)->get(route('admin.submissions.index', ['tab' => 'all', 'search' => 'SV009']));
+        $response2->assertOk();
+        $response2->assertSee('Pham Thi Dung');
+        $response2->assertDontSee('Le Van Cuong');
+    }
+
+    public function test_admin_exam_show_displays_submitted_students(): void {
+        $admin = User::factory()->create(['role' => 'admin']);
+        $student = User::factory()->create(['role' => 'student', 'name' => 'Hoang Van E', 'student_id' => 'SV010']);
+
+        $class = \App\Models\Classes::create(['name' => 'Lớp 65.CNTT-2', 'created_by' => $admin->id, 'is_active' => true]);
+        $exam = \App\Models\Exam::create([
+            'title' => 'Thi Cuoi Ky PHP',
+            'class_id' => $class->id,
+            'starts_at' => now()->subDay(),
+            'ends_at' => now()->addDay(),
+            'is_active' => true,
+            'created_by' => $admin->id,
+        ]);
+
+        \App\Models\ExamAttempt::create([
+            'exam_id' => $exam->id,
+            'user_id' => $student->id,
+            'started_at' => now()->subMinutes(30),
+            'submitted_at' => now()->subMinutes(2),
+        ]);
+
+        $sub = Submission::create([
+            'user_id' => $student->id,
+            'exam_id' => $exam->id,
+            'code' => '<?php echo "EXAM_FINAL"; ?>',
+            'output_html' => 'EXAM_FINAL',
+            'execution_status' => 'success',
+            'submitted_at' => now()->subMinutes(2),
+        ]);
+
+        $response = $this->actingAs($admin)->get(route('admin.exams.show', $exam->id));
+        $response->assertOk();
+        $response->assertSee('Hoang Van E');
+        $response->assertSee('Sinh viên đã nộp bài chính thức');
+        $response->assertSee('Chấm bài');
+        $response->assertSee(route('admin.submissions.show', $sub->id));
+    }
 }

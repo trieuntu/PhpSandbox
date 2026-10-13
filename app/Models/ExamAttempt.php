@@ -18,4 +18,18 @@ class ExamAttempt extends Model {
     public function isSubmitted(): bool {
         return $this->submitted_at !== null;
     }
+
+    public function durationFormatted(): string {
+        if (!$this->started_at || !$this->submitted_at) return '—';
+        $seconds = abs($this->started_at->diffInSeconds($this->submitted_at));
+        if ($seconds < 60) return "{$seconds} giây";
+        $minutes = floor($seconds / 60);
+        $remSec = $seconds % 60;
+        if ($minutes < 60) {
+            return "{$minutes} phút" . ($remSec > 0 ? " {$remSec}s" : '');
+        }
+        $hours = floor($minutes / 60);
+        $remMin = $minutes % 60;
+        return "{$hours} giờ" . ($remMin > 0 ? " {$remMin}p" : '');
+    }
 }

@@ -5,23 +5,110 @@ use Illuminate\Http\Request;
 use App\Models\Submission;
 use App\Models\User;
 use App\Models\Exam;
+use App\Models\ExamAttempt;
 use App\Services\SandboxService;
 
 class SubmissionController extends Controller {
     public function index(Request $request) {
-        $query = Submission::with('user', 'assignment', 'exam')->orderByDesc('submitted_at');
-        
-        if ($userId = $request->input('user_id')) $query->where('user_id', $userId);
-        if ($examId = $request->input('exam_id')) $query->where('exam_id', $examId);
-        if ($status = $request->input('status')) $query->where('execution_status', $status);
-        if ($from = $request->input('from')) $query->where('submitted_at', '>=', $from);
-        if ($to = $request->input('to')) $query->where('submitted_at', '<=', $to . ' 23:59:59');
-        
-        $submissions = $query->paginate(20);
+        $defaultTab = ($request->hasAny(['type', 'status', 'from', 'to']) && !$request->has('tab')) ? 'all' : 'submitted';
+        $activeTab = $request->input('tab', $defaultTab);
+        if (!in_array($activeTab, ['submitted', 'all'])) {
+            $activeTab = 'submitted';
+        }
+
+        $exams = Exam::with('class')->orderByDesc('starts_at')->get();
+        $submittedAttemptsTotal = ExamAttempt::whereNotNull('submitted_at')->count();
+        $allSubmissionsTotal = Submission::count();
+
+        $submittedAttempts = null;
+        $submissions = null;
+
+        if ($activeTab === 'submitted') {
+            $attemptsQuery = ExamAttempt::with(['user', 'exam.class'])
+                ->whereNotNull('submitted_at')
+                ->orderByDesc('submitted_at');
+
+            if ($search = trim((string) $request->input('search'))) {
+                $attemptsQuery->where(function ($q) use ($search) {
+                    $q->whereHas('user', function ($uq) use ($search) {
+                        $uq->where('name', 'like', "%{$search}%")
+                            ->orWhere('student_id', 'like', "%{$search}%")
+                            ->orWhere('email', 'like', "%{$search}%")
+                            ->orWhere('first_name', 'like', "%{$search}%")
+                            ->orWhere('last_name', 'like', "%{$search}%");
+                    })->orWhereHas('exam', function ($eq) use ($search) {
+                        $eq->where('title', 'like', "%{$search}%")
+                            ->orWhereHas('class', function ($cq) use ($search) {
+                                $cq->where('name', 'like', "%{$search}%");
+                            });
+                    });
+                });
+            }
+
+            if ($examId = $request->input('exam_id')) {
+                $attemptsQuery->where('exam_id', $examId);
+            }
+
+            $submittedAttempts = $attemptsQuery->paginate(20)->withQueryString();
+
+            // Map latest submission for each attempt on the current page
+            $userIds = $submittedAttempts->pluck('user_id');
+            $examIds = $submittedAttempts->pluck('exam_id');
+            $latest = Submission::whereIn('user_id', $userIds)
+                ->whereIn('exam_id', $examIds)
+                ->orderByDesc('submitted_at')
+                ->get()
+                ->groupBy(fn($s) => $s->exam_id . '_' . $s->user_id)
+                ->map(fn($g) => $g->first());
+
+            foreach ($submittedAttempts as $attempt) {
+                $attempt->latest_submission = $latest->get($attempt->exam_id . '_' . $attempt->user_id);
+            }
+        } else {
+            $submissionsQuery = Submission::with('user', 'assignment.class', 'exam.class')
+                ->orderByDesc('submitted_at');
+
+            if ($search = trim((string) $request->input('search'))) {
+                $submissionsQuery->where(function ($q) use ($search) {
+                    $q->whereHas('user', function ($uq) use ($search) {
+                        $uq->where('name', 'like', "%{$search}%")
+                            ->orWhere('student_id', 'like', "%{$search}%")
+                            ->orWhere('email', 'like', "%{$search}%")
+                            ->orWhere('first_name', 'like', "%{$search}%")
+                            ->orWhere('last_name', 'like', "%{$search}%");
+                    })->orWhereHas('exam', function ($eq) use ($search) {
+                        $eq->where('title', 'like', "%{$search}%");
+                    })->orWhereHas('assignment', function ($aq) use ($search) {
+                        $aq->where('title', 'like', "%{$search}%");
+                    });
+                });
+            }
+
+            if ($userId = $request->input('user_id')) $submissionsQuery->where('user_id', $userId);
+            if ($examId = $request->input('exam_id')) $submissionsQuery->where('exam_id', $examId);
+            if ($status = $request->input('status')) $submissionsQuery->where('execution_status', $status);
+            if ($type = $request->input('type')) {
+                if ($type === 'exam') $submissionsQuery->whereNotNull('exam_id');
+                elseif ($type === 'assignment') $submissionsQuery->whereNotNull('assignment_id');
+                elseif ($type === 'free') $submissionsQuery->whereNull('exam_id')->whereNull('assignment_id');
+            }
+            if ($from = $request->input('from')) $submissionsQuery->where('submitted_at', '>=', $from);
+            if ($to = $request->input('to')) $submissionsQuery->where('submitted_at', '<=', $to . ' 23:59:59');
+
+            $submissions = $submissionsQuery->paginate(20)->withQueryString();
+        }
+
         $users = User::where('role', 'student')->orderBy('first_name')->orderBy('last_name')->get();
-        $exams = Exam::orderByDesc('starts_at')->get();
-        
-        return view('admin.submissions.index', compact('submissions', 'users', 'exams'));
+
+        return view('admin.submissions.index', compact(
+            'activeTab',
+            'submittedAttempts',
+            'submissions',
+            'submittedAttemptsTotal',
+            'allSubmissionsTotal',
+            'exams',
+            'users'
+        ));
     }
     
     public function show(Submission $submission) {
