@@ -64,11 +64,13 @@ class ExamController extends Controller {
         $exam->update($data);
 
         // Synchronize expires_at for all ongoing (unsubmitted) attempts
-        if ($exam->time_limit_minutes) {
-            $exam->attempts()->whereNull('submitted_at')->get()->each(function ($attempt) use ($exam) {
-                $newExpires = $attempt->started_at->copy()->addMinutes($exam->time_limit_minutes);
+        if (!empty($exam->time_limit_minutes)) {
+            $minutes = (int) $exam->time_limit_minutes;
+            $exam->attempts()->whereNull('submitted_at')->get()->each(function ($attempt) use ($exam, $minutes) {
+                $started = $attempt->started_at ? \Illuminate\Support\Carbon::parse($attempt->started_at) : now();
+                $newExpires = $started->copy()->addMinutes($minutes);
                 if ($exam->ends_at && $newExpires->isAfter($exam->ends_at)) {
-                    $newExpires = $exam->ends_at;
+                    $newExpires = \Illuminate\Support\Carbon::parse($exam->ends_at);
                 }
                 $attempt->update(['expires_at' => $newExpires]);
             });

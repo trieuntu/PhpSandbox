@@ -26,7 +26,7 @@ class ExamController extends Controller {
         
         $expiresAt = null;
         if ($exam->time_limit_minutes) {
-            $expiresAt = now()->addMinutes($exam->time_limit_minutes);
+            $expiresAt = now()->addMinutes((int) $exam->time_limit_minutes);
             // Also cap at exam end time
             if ($expiresAt->isAfter($exam->ends_at)) {
                 $expiresAt = $exam->ends_at;
