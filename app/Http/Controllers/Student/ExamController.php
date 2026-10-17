@@ -16,7 +16,7 @@ class ExamController extends Controller {
         $user = Auth::user();
         
         if (!$exam->isOpen()) {
-            return redirect()->route('student.exams.lobby', $exam)->with('error', 'Exam is not currently active.');
+            return redirect()->route('student.exams.lobby', $exam)->with('error', 'Bài thi hiện chưa mở hoặc đã kết thúc.');
         }
         
         $existing = ExamAttempt::where('exam_id', $exam->id)->where('user_id', $user->id)->first();
@@ -33,14 +33,19 @@ class ExamController extends Controller {
             }
         }
         
-        ExamAttempt::create([
-            'exam_id' => $exam->id,
-            'user_id' => $user->id,
-            'started_at' => now(),
-            'expires_at' => $expiresAt,
-        ]);
-        
-        \App\Services\ActivityLogger::log('exam_started', "Started exam: {$exam->title}", ['exam_id' => $exam->id]);
+        try {
+            ExamAttempt::create([
+                'exam_id' => $exam->id,
+                'user_id' => $user->id,
+                'started_at' => now(),
+                'expires_at' => $expiresAt,
+            ]);
+            
+            \App\Services\ActivityLogger::log('exam_started', "Started exam: {$exam->title}", ['exam_id' => $exam->id]);
+        } catch (\Throwable $e) {
+            \Illuminate\Support\Facades\Log::error("Failed to start exam {$exam->id} for user {$user->id}: " . $e->getMessage());
+            return redirect()->route('student.exams.lobby', $exam)->with('error', 'Không thể khởi tạo bài thi: ' . $e->getMessage());
+        }
         
         return redirect()->route('student.exams.editor', $exam);
     }

@@ -44,13 +44,16 @@ if ($lastSubmission) {
             </div>
             @endif
 
-            <button @click="submitExam()" :disabled="submitting"
-                class="flex items-center gap-1.5 bg-red-600 text-white px-6 py-2 rounded font-medium hover:bg-red-700 disabled:opacity-50 transition">
+            <button @click="openSubmitModal()" :disabled="submitting"
+                class="flex items-center gap-1.5 bg-red-600 text-white px-5 py-2 rounded-lg font-medium hover:bg-red-700 disabled:opacity-50 transition cursor-pointer shadow-sm">
                 <span x-show="!submitting" class="flex items-center gap-1.5">
-                    <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M6 12L3.269 3.126A59.768 59.768 0 0121.485 12 59.77 59.77 0 013.27 20.876L5.999 12zm0 0h7.5" /></svg>
-                    Nộp bài
+                    <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M6 12L3.269 3.126A59.768 59.768 0 0121.485 12 59.77 59.77 0 013.27 20.876L5.999 12zm0 0h7.5" /></svg>
+                    <span>Nộp bài</span>
                 </span>
-                <span x-show="submitting" x-cloak>Đang nộp...</span>
+                <span x-show="submitting" x-cloak class="flex items-center gap-1.5">
+                    <svg class="w-4 h-4 animate-spin" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 3v3m6.366-.366l-2.12 2.12M21 12h-3m.366 6.366l-2.12-2.12M12 21v-3m-6.366.366l2.12-2.12M3 12h3m-.366-6.366l2.12 2.12" /></svg>
+                    <span>Đang nộp...</span>
+                </span>
             </button>
         </div>
     </div>
@@ -111,6 +114,57 @@ if ($lastSubmission) {
                 x-bind:src="previewUrl || 'about:blank'"></iframe>
         </div>
     </div>
+
+    <!-- In-page submit confirmation modal (Bypasses native confirm blockers) -->
+    <div x-show="showSubmitModal"
+         x-cloak
+         class="fixed inset-0 z-50 overflow-y-auto"
+         role="dialog"
+         aria-modal="true"
+         @keydown.escape.window="if (!submitting) showSubmitModal = false">
+        <div class="fixed inset-0 bg-black/50 backdrop-blur-xs transition-opacity"
+             @click="if (!submitting) showSubmitModal = false"></div>
+        <div class="flex min-h-full items-center justify-center p-4 text-center sm:p-0">
+            <div class="relative transform overflow-hidden rounded-2xl bg-white text-left shadow-2xl transition-all sm:my-8 sm:w-full sm:max-w-md border border-gray-200"
+                 @click.stop>
+                <div class="bg-white p-6">
+                    <div class="flex items-start gap-4">
+                        <div class="flex-shrink-0 w-12 h-12 rounded-full bg-red-100 flex items-center justify-center text-red-600">
+                            <svg class="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z" />
+                            </svg>
+                        </div>
+                        <div class="flex-1">
+                            <h3 class="text-lg font-bold text-gray-900">
+                                Xác nhận nộp bài thi
+                            </h3>
+                            <div class="mt-2.5 text-sm text-gray-600 space-y-2">
+                                <p>Bạn có chắc chắn muốn nộp bài thi không? Sau khi nộp, bạn <strong>không thể chỉnh sửa</strong> bài làm nữa.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="bg-gray-50 px-6 py-3.5 flex flex-col-reverse sm:flex-row sm:justify-end gap-2 border-t border-gray-100">
+                    <button type="button"
+                        :disabled="submitting"
+                        @click="showSubmitModal = false"
+                        class="w-full sm:w-auto px-4 py-2 rounded-lg border border-gray-300 text-gray-700 bg-white hover:bg-gray-100 font-medium text-sm transition">
+                        Quay lại làm tiếp
+                    </button>
+                    <button type="button"
+                        :disabled="submitting"
+                        @click="confirmSubmit()"
+                        class="w-full sm:w-auto px-5 py-2 rounded-lg bg-red-600 hover:bg-red-700 text-white font-semibold text-sm transition shadow-sm flex items-center justify-center gap-1.5 cursor-pointer">
+                        <svg x-show="submitting" class="animate-spin -ml-1 mr-1.5 h-4 w-4 text-white" fill="none" viewBox="0 0 24 24">
+                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path>
+                        </svg>
+                        <span x-text="submitting ? 'Đang nộp bài...' : 'Xác nhận Nộp'"></span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
 </div>
 @endsection
 
@@ -153,6 +207,7 @@ function examApp(examId, initialSeconds) {
     const app = Object.assign(createMultiFileMixin(initialExamFiles), {
         running: false,
         submitting: false,
+        showSubmitModal: false,
         saving: false,
         autoSaved: false,
         status: '',
@@ -162,6 +217,15 @@ function examApp(examId, initialSeconds) {
         remainingSeconds: initialSeconds,
         timer: null,
         endTime: (initialSeconds !== null && initialSeconds !== undefined) ? Date.now() + (initialSeconds * 1000) : null,
+
+        openSubmitModal() {
+            this.showSubmitModal = true;
+        },
+
+        async confirmSubmit() {
+            this.showSubmitModal = false;
+            await this.submitExam(true);
+        },
 
         init() {
             window.examAppInstance = this;
@@ -259,10 +323,10 @@ function examApp(examId, initialSeconds) {
 
         async submitExam(autoSubmit = false) {
             if (!monacoEditor) return;
-            const msg = autoSubmit
-                ? 'Hết thời gian! Bài thi sẽ được nộp tự động.'
-                : 'Bạn chắc chắn muốn nộp bài? Không thể chỉnh sửa sau khi nộp.';
-            if (!autoSubmit && !confirm(msg)) return;
+            if (!autoSubmit) {
+                this.showSubmitModal = true;
+                return;
+            }
 
             this.submitting = true;
             const filesMap = this.buildFilesMap();

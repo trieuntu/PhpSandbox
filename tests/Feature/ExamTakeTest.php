@@ -65,4 +65,42 @@ class ExamTakeTest extends TestCase {
             $attempt->fresh()->expires_at->timestamp
         );
     }
+
+    public function test_enrolled_student_can_see_lobby_modal_and_start_exam(): void {
+        $this->withoutVite();
+        $admin = User::factory()->create(['role' => 'admin']);
+        $student = User::factory()->create([
+            'role' => 'student',
+            'email' => 'phonexai.x.65cntt@ntu.edu.vn',
+            'student_id' => '65139006',
+            'first_name' => 'Phonexai',
+            'last_name' => 'Xaiyadeth',
+        ]);
+        $class = Classes::create(['name' => '65.CNTT-CLC', 'created_by' => $admin->id, 'is_active' => true]);
+        $class->students()->attach($student->id, ['enrolled_at' => now()]);
+
+        $exam = Exam::create([
+            'class_id' => $class->id,
+            'title' => 'Bài kiểm tra PHP',
+            'starts_at' => now()->subMinutes(5),
+            'ends_at' => now()->addHours(1),
+            'time_limit_minutes' => 45,
+            'is_active' => true,
+            'created_by' => $admin->id,
+        ]);
+
+        $response = $this->actingAs($student)->get(route('student.exams.lobby', $exam));
+        $response->assertOk();
+        $response->assertSee('startExamModal');
+        $response->assertSee('Bắt đầu thi');
+        $response->assertDontSee('onclick="return confirm(');
+
+        $startResponse = $this->actingAs($student)->post(route('student.exams.start', $exam));
+        $startResponse->assertRedirect(route('student.exams.editor', $exam));
+
+        $this->assertDatabaseHas('exam_attempts', [
+            'exam_id' => $exam->id,
+            'user_id' => $student->id,
+        ]);
+    }
 }

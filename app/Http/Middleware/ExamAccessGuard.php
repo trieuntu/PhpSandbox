@@ -14,22 +14,22 @@ class ExamAccessGuard {
         
         // Check exam is active and within time window
         if (!$exam->isOpen()) {
-            return redirect()->route('student.exams.lobby', $exam)->with('error', 'This exam is not currently active.');
+            return redirect()->route('student.exams.lobby', $exam)->with('error', 'Bài thi hiện chưa mở hoặc đã kết thúc.');
         }
         
         // Check student has a valid attempt
         $attempt = ExamAttempt::where('exam_id', $exam->id)->where('user_id', $userId)->first();
         if (!$attempt) {
-            return redirect()->route('student.exams.lobby', $exam)->with('error', 'You must start the exam first.');
+            return redirect()->route('student.exams.lobby', $exam)->with('error', 'Bạn chưa bắt đầu bài thi.');
         }
         
         // Check attempt not expired or submitted
         if ($attempt->isSubmitted()) {
-            return redirect()->route('student.exams.submitted', $exam)->with('info', 'You have already submitted this exam.');
+            return redirect()->route('student.exams.submitted', $exam)->with('info', 'Bạn đã nộp bài thi này rồi.');
         }
         
         if ($attempt->isExpired()) {
-            return redirect()->route('student.exams.submitted', $exam)->with('warning', 'Your exam time has expired.');
+            return redirect()->route('student.exams.submitted', $exam)->with('warning', 'Thời gian làm bài của bạn đã hết.');
         }
         
         return $next($request);
