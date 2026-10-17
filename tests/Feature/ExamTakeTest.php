@@ -91,7 +91,7 @@ class ExamTakeTest extends TestCase {
 
         $response = $this->actingAs($student)->get(route('student.exams.lobby', $exam));
         $response->assertOk();
-        $response->assertSee('startExamModal');
+        $response->assertSee('startExamBtn');
         $response->assertSee('Bắt đầu thi');
         $response->assertDontSee('onclick="return confirm(');
 
