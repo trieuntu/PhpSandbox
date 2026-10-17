@@ -102,33 +102,129 @@
                         <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3" /></svg>
                     </a>
                 @else
-                    <!-- Lưu ý trước khi bắt đầu bài thi -->
-                    <div class="bg-amber-50 border border-amber-200 rounded-lg p-4 mb-4 text-sm text-amber-900">
-                        <div class="flex items-center gap-2 font-semibold text-amber-800 mb-1">
-                            <svg class="w-5 h-5 text-amber-600 flex-shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z" />
-                            </svg>
-                            <span>Lưu ý trước khi làm bài:</span>
+                    <!-- Start Button triggers In-Page Modal (Fail-proof, bypasses browser confirm blockers) -->
+                    <button type="button"
+                        id="openStartModalBtn"
+                        onclick="openStartModal()"
+                        class="flex items-center justify-center gap-2 w-full bg-orange-500 text-white px-6 py-3.5 rounded-lg font-semibold hover:bg-orange-600 active:bg-orange-700 transition text-lg shadow-md cursor-pointer">
+                        <svg class="w-5 h-5" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M5.25 5.653c0-.856.917-1.398 1.667-.986l11.54 6.348a1.125 1.125 0 010 1.971l-11.54 6.347a1.125 1.125 0 01-1.667-.985V5.653z" /></svg>
+                        <span>Bắt đầu thi</span>
+                    </button>
+                    @if($exam->time_limit_minutes)
+                        <p class="text-xs text-gray-500 text-center mt-2.5">
+                            Sau khi bắt đầu, bạn có <strong>{{ $exam->time_limit_minutes }} phút</strong> để hoàn thành.
+                        </p>
+                    @endif
+
+                    <!-- In-page confirmation modal (Zero dependency on native window.confirm) -->
+                    <div id="startExamModal"
+                         class="hidden fixed inset-0 z-50 overflow-y-auto"
+                         role="dialog"
+                         aria-modal="true"
+                         aria-labelledby="modalTitle">
+                        <!-- Backdrop -->
+                        <div class="fixed inset-0 bg-black/50 transition-opacity backdrop-blur-xs"
+                             onclick="closeStartModal()"></div>
+
+                        <!-- Modal Dialog -->
+                        <div class="flex min-h-full items-center justify-center p-4 text-center sm:p-0">
+                            <div class="relative transform overflow-hidden rounded-2xl bg-white text-left shadow-2xl transition-all sm:my-8 sm:w-full sm:max-w-lg border border-gray-200"
+                                 onclick="event.stopPropagation()">
+                                <div class="bg-white p-6 sm:p-7">
+                                    <div class="flex items-start gap-4">
+                                        <div class="flex-shrink-0 w-12 h-12 rounded-full bg-orange-100 flex items-center justify-center text-orange-600">
+                                            <svg class="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                                <path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                            </svg>
+                                        </div>
+                                        <div class="flex-1">
+                                            <h3 id="modalTitle" class="text-xl font-bold text-gray-900">
+                                                Xác nhận bắt đầu thi
+                                            </h3>
+                                            <div class="mt-3 text-sm text-gray-600 space-y-3">
+                                                <p class="font-medium text-gray-800">
+                                                    Bài thi: <span class="text-orange-600 font-semibold">{{ $exam->title }}</span>
+                                                </p>
+                                                @if($exam->time_limit_minutes)
+                                                    <div class="bg-amber-50 border border-amber-200 text-amber-900 rounded-lg p-3 text-xs leading-relaxed">
+                                                        <strong class="font-semibold block mb-1">⏱️ Lưu ý về thời gian làm bài:</strong>
+                                                        <p>Thời gian làm bài là <strong>{{ $exam->time_limit_minutes }} phút</strong> và sẽ được tính ngay khi bạn bấm nút xác nhận.</p>
+                                                    </div>
+                                                @else
+                                                    <p class="text-xs text-gray-500 bg-gray-50 p-2.5 rounded border border-gray-200">
+                                                        Thời gian kết thúc chung: {{ $exam->ends_at->format('d/m/Y H:i') }}
+                                                    </p>
+                                                @endif
+                                                <p class="text-gray-700">
+                                                    Bạn đã chắc chắn muốn bắt đầu làm bài chưa?
+                                                </p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="bg-gray-50 px-6 py-4 flex flex-col-reverse sm:flex-row sm:justify-end gap-2.5 border-t border-gray-100">
+                                    <button type="button"
+                                        id="cancelStartBtn"
+                                        onclick="closeStartModal()"
+                                        class="w-full sm:w-auto px-5 py-2.5 rounded-lg border border-gray-300 text-gray-700 bg-white hover:bg-gray-100 font-medium text-sm transition cursor-pointer">
+                                        Hủy
+                                    </button>
+
+                                    <form id="startExamForm" method="POST" action="{{ route('student.exams.start', $exam) }}" onsubmit="handleStartSubmit(event)" class="w-full sm:w-auto">
+                                        @csrf
+                                        <button type="submit"
+                                            id="confirmStartBtn"
+                                            class="w-full sm:w-auto px-6 py-2.5 rounded-lg bg-orange-500 hover:bg-orange-600 active:bg-orange-700 text-white font-semibold text-sm transition shadow-sm flex items-center justify-center gap-2 cursor-pointer">
+                                            <svg id="startSpinner" class="hidden animate-spin -ml-1 mr-2 h-4 w-4 text-white" fill="none" viewBox="0 0 24 24">
+                                                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path>
+                                            </svg>
+                                            <span id="startBtnText">Bắt đầu làm bài</span>
+                                        </button>
+                                    </form>
+                                </div>
+                            </div>
                         </div>
-                        <ul class="list-disc list-inside space-y-1 text-xs text-gray-700 mt-2">
-                            <li>Thời gian làm bài sẽ được tính ngay khi bạn nhấn <strong>"Bắt đầu thi"</strong>.</li>
-                            @if($exam->time_limit_minutes)
-                                <li>Thời gian làm bài là <strong>{{ $exam->time_limit_minutes }} phút</strong>.</li>
-                            @endif
-                            <li>Không tải lại trang hoặc đóng trình duyệt trong khi đang thi.</li>
-                        </ul>
                     </div>
 
-                    <!-- Nút bắt đầu thi trực tiếp: Hoàn toàn không dùng popup/confirm, tương thích 100% với SEB Browser -->
-                    <form method="POST" action="{{ route('student.exams.start', $exam) }}" onsubmit="const b = this.querySelector('button'); if(b){ b.classList.add('opacity-75'); b.innerHTML = '<span>Đang vào bài thi...</span>'; }">
-                        @csrf
-                        <button type="submit"
-                            id="startExamBtn"
-                            class="flex items-center justify-center gap-2 w-full bg-orange-500 text-white px-6 py-3.5 rounded-lg font-semibold hover:bg-orange-600 active:bg-orange-700 transition text-lg shadow-md cursor-pointer">
-                            <svg class="w-5 h-5" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M5.25 5.653c0-.856.917-1.398 1.667-.986l11.54 6.348a1.125 1.125 0 010 1.971l-11.54 6.347a1.125 1.125 0 01-1.667-.985V5.653z" /></svg>
-                            <span>Bắt đầu thi</span>
-                        </button>
-                    </form>
+                    <script>
+                    function openStartModal() {
+                        const modal = document.getElementById('startExamModal');
+                        if (modal) {
+                            modal.classList.remove('hidden');
+                            document.body.classList.add('overflow-hidden');
+                        }
+                    }
+                    function closeStartModal() {
+                        const btn = document.getElementById('confirmStartBtn');
+                        if (btn && btn.dataset.submitting === 'true') return;
+                        const modal = document.getElementById('startExamModal');
+                        if (modal) {
+                            modal.classList.add('hidden');
+                            document.body.classList.remove('overflow-hidden');
+                        }
+                    }
+                    function handleStartSubmit(e) {
+                        const btn = document.getElementById('confirmStartBtn');
+                        const cancelBtn = document.getElementById('cancelStartBtn');
+                        const spinner = document.getElementById('startSpinner');
+                        const text = document.getElementById('startBtnText');
+                        if (!btn) return;
+                        if (btn.dataset.submitting === 'true') {
+                            e.preventDefault();
+                            return false;
+                        }
+                        btn.dataset.submitting = 'true';
+                        btn.disabled = true;
+                        if (cancelBtn) cancelBtn.disabled = true;
+                        if (spinner) spinner.classList.remove('hidden');
+                        if (text) text.innerText = 'Đang vào bài thi...';
+                    }
+                    document.addEventListener('keydown', function(e) {
+                        if (e.key === 'Escape') closeStartModal();
+                    });
+                    </script>
                 @endif
             </div>
         </div>
