@@ -9,7 +9,10 @@ use App\Models\Submission;
 class ExamController extends Controller {
     public function lobby(Exam $exam) {
         $attempt = ExamAttempt::where('exam_id', $exam->id)->where('user_id', Auth::id())->first();
-        return view('student.exam.lobby', compact('exam', 'attempt'));
+        return response()
+            ->view('student.exam.lobby', compact('exam', 'attempt'))
+            ->header('Cache-Control', 'no-cache, no-store, max-age=0, must-revalidate')
+            ->header('Pragma', 'no-cache');
     }
     
     public function start(Exam $exam) {
@@ -43,6 +46,10 @@ class ExamController extends Controller {
             
             \App\Services\ActivityLogger::log('exam_started', "Started exam: {$exam->title}", ['exam_id' => $exam->id]);
         } catch (\Throwable $e) {
+            $existing = ExamAttempt::where('exam_id', $exam->id)->where('user_id', $user->id)->first();
+            if ($existing) {
+                return redirect()->route('student.exams.editor', $exam);
+            }
             \Illuminate\Support\Facades\Log::error("Failed to start exam {$exam->id} for user {$user->id}: " . $e->getMessage());
             return redirect()->route('student.exams.lobby', $exam)->with('error', 'Không thể khởi tạo bài thi: ' . $e->getMessage());
         }

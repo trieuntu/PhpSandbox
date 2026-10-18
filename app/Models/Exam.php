@@ -19,6 +19,7 @@ class Exam extends Model {
 
     public function isOpen(): bool {
         $now = now();
-        return $this->is_active && $this->starts_at <= $now && $this->ends_at >= $now;
+        // Cho phép sớm 60 giây để tránh lệch đồng hồ giây giữa server và client
+        return $this->is_active && $this->starts_at->copy()->subSeconds(60) <= $now && $this->ends_at >= $now;
     }
 }

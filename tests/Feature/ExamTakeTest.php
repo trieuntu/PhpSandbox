@@ -91,9 +91,11 @@ class ExamTakeTest extends TestCase {
 
         $response = $this->actingAs($student)->get(route('student.exams.lobby', $exam));
         $response->assertOk();
-        $response->assertSee('startExamModal');
+        $response->assertSee('startExamBtn');
+        $response->assertSee('startExamForm');
         $response->assertSee('Bắt đầu thi');
         $response->assertDontSee('onclick="return confirm(');
+        $response->assertDontSee('startExamModal');
 
         $startResponse = $this->actingAs($student)->post(route('student.exams.start', $exam));
         $startResponse->assertRedirect(route('student.exams.editor', $exam));
