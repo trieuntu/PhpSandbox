@@ -37,24 +37,33 @@ class Executor
             mkdir($execDir, 0700, true);
         }
 
-        // Build and write the full PHP execution file
-        $fullCode = $this->buildCode($execDir);
-        $runFile  = $execDir . '/run.php';
-        file_put_contents($runFile, $fullCode);
+        // Write bootstrap and footer files, then execute student code with auto_prepend_file & auto_append_file
+        $bootCode = $this->buildBootstrap($execDir);
+        $bootFile = $execDir . '/__sb_boot__.php';
+        file_put_contents($bootFile, $bootCode);
+        chmod($bootFile, 0600);
+
+        $footFile = $execDir . '/__sb_foot__.php';
+        file_put_contents($footFile, $this->buildFooter());
+        chmod($footFile, 0600);
+
+        $runFile  = $execDir . '/index.php';
+        file_put_contents($runFile, $this->input['code'] ?? '');
         chmod($runFile, 0600);
 
         // Execute with a hard timeout watchdog
         $startTime       = microtime(true);
-        $result          = $this->executeWithTimeout($runFile, $execDir);
+        $result          = $this->executeWithTimeout($runFile, $bootFile, $footFile, $execDir);
         $executionTimeMs = (int) ((microtime(true) - $startTime) * 1000);
 
         // The bootstrap wrapper emits structured JSON on stdout
         $parsed = @json_decode($result['stdout'], true);
         if ($parsed && isset($parsed['__sandbox_output'])) {
+            $rawErrors = $parsed['__sandbox_errors'] ?? $result['stderr'];
             return [
                 'status'           => $result['timeout'] ? 'timeout' : ($result['exit_code'] === 0 ? 'success' : 'error'),
                 'output'           => $parsed['__sandbox_output']  ?? '',
-                'errors'           => $parsed['__sandbox_errors']  ?? $result['stderr'],
+                'errors'           => $this->sanitizeErrors($rawErrors, $execDir),
                 'execution_time_ms' => $executionTimeMs,
                 'memory_kb'        => $parsed['__sandbox_memory_kb'] ?? 0,
                 'cookies'          => $parsed['__sandbox_cookies']  ?? [],
@@ -65,7 +74,7 @@ class Executor
         return [
             'status'           => $result['timeout'] ? 'timeout' : ($result['exit_code'] === 0 ? 'success' : 'error'),
             'output'           => $result['stdout'],
-            'errors'           => $result['stderr'],
+            'errors'           => $this->sanitizeErrors($result['stderr'], $execDir),
             'execution_time_ms' => $executionTimeMs,
             'memory_kb'        => 0,
             'cookies'          => [],
@@ -73,13 +82,13 @@ class Executor
         ];
     }
 
-    private function buildCode(string $execDir): string
+    private function buildBootstrap(string $execDir): string
     {
         $bootstrap  = file_get_contents(__DIR__ . '/bootstrap.php.template');
         $cookieJson   = json_encode($this->input['cookie_data'] ?? []);
         $sharedDbsJson = json_encode($this->input['shared_dbs'] ?? []);
 
-        $bootstrap = str_replace(
+        return str_replace(
             [
                 '__USER_ID__',
                 '__CONTEXT__',
@@ -102,8 +111,28 @@ class Executor
             ],
             $bootstrap
         );
+    }
 
-        return $bootstrap . "\n" . ($this->input['code'] ?? '') . "\n" . $this->buildFooter();
+    private function sanitizeErrors(string $errors, string $execDir): string
+    {
+        if (trim($errors) === '') {
+            return '';
+        }
+
+        $realDir = realpath($execDir) ?: $execDir;
+        $errors = str_replace([rtrim($realDir, '/') . '/', rtrim($execDir, '/') . '/'], '', $errors);
+        $errors = preg_replace('#/tmp/sandbox_exec/[^/]+/[^/]+/#', '', $errors);
+
+        $lines = explode("\n", $errors);
+        $filtered = [];
+        foreach ($lines as $line) {
+            if (str_contains($line, '__sb_boot__.php') || str_contains($line, '__sb_foot__.php')) {
+                continue;
+            }
+            $filtered[] = $line;
+        }
+
+        return trim(implode("\n", $filtered));
     }
 
     private function buildFooter(): string
@@ -134,14 +163,14 @@ echo json_encode([
 PHP;
     }
 
-    private function executeWithTimeout(string $runFile, string $execDir): array
+    private function executeWithTimeout(string $runFile, string $bootFile, string $footFile, string $execDir): array
     {
         // The executor process itself is NOT restricted by open_basedir so it can use proc_open.
         // The child PHP process runs under the restrictive php-sandbox.ini installed in the container.
         $sandboxIni = '/usr/local/etc/php/conf.d/php-sandbox.ini';
         $phpIniArg  = file_exists($sandboxIni) ? "-c {$sandboxIni}" : '';
 
-        $cmd = "php {$phpIniArg} " . escapeshellarg($runFile);
+        $cmd = "php {$phpIniArg} -d auto_prepend_file=" . escapeshellarg($bootFile) . " -d auto_append_file=" . escapeshellarg($footFile) . " " . escapeshellarg($runFile);
 
         $descriptors = [
             0 => ['pipe', 'r'],

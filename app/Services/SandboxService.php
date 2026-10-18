@@ -58,6 +58,12 @@ class SandboxService {
             }
 
             $result = $response->json();
+            if (!empty($result['errors'])) {
+                $result['errors'] = $this->sanitizeOutputErrors($result['errors']);
+            }
+            if (!empty($result['output'])) {
+                $result['output'] = $this->sanitizeOutputErrors($result['output']);
+            }
             $this->updateState($user, $contextType, $contextId, $result);
             return $result;
 
@@ -190,17 +196,15 @@ class SandboxService {
         $sharedDbsBootstrap = $this->buildSharedDbsBootstrap();
         $studentDbBootstrap = $this->buildStudentDbBootstrap($user);
         $preamble    = $initLine . $sharedDbsBootstrap . $studentDbBootstrap;
-        $tmpDir      = null;
+
+        $tmpDir = sys_get_temp_dir() . '/phpsandbox_' . uniqid() . '/';
+        mkdir($tmpDir, 0700, true);
 
         if (!empty($files)) {
-            // Multi-file mode: write all files to a temp directory
-            $tmpDir = sys_get_temp_dir() . '/phpsandbox_' . uniqid() . '/';
-            mkdir($tmpDir, 0700, true);
-
             foreach ($files as $filename => $content) {
-                // Sanitize filename — no path traversal
+                // Sanitize filename — no path traversal and prevent overwriting internal boot script
                 $safeName = basename($filename);
-                if ($safeName !== '') {
+                if ($safeName !== '' && !str_starts_with($safeName, '__sb_')) {
                     file_put_contents($tmpDir . $safeName, $content);
                 }
             }
@@ -213,34 +217,25 @@ class SandboxService {
             } else {
                 $entryName = basename((string) array_key_first($files));
             }
-
-            // Write a runner that prepends init then includes the entry file
-            $runnerFile = $tmpDir . '__sb_run__.php';
-            file_put_contents($runnerFile, $preamble . file_get_contents($tmpDir . $entryName));
-
-            $cmd = sprintf(
-                'cd %s && %s -d memory_limit=%s -d max_execution_time=%d -d disable_functions=%s %s',
-                escapeshellarg($tmpDir),
-                escapeshellarg($php),
-                escapeshellarg($memLimit),
-                $maxTime,
-                escapeshellarg($disabledFns),
-                escapeshellarg($runnerFile)
-            );
         } else {
-            // Single-file mode (backward compat)
-            $tmpFile = tempnam(sys_get_temp_dir(), 'phpsandbox_') . '.php';
-            file_put_contents($tmpFile, $preamble . $code);
-
-            $cmd = sprintf(
-                '%s -d memory_limit=%s -d max_execution_time=%d -d disable_functions=%s %s',
-                escapeshellarg($php),
-                escapeshellarg($memLimit),
-                $maxTime,
-                escapeshellarg($disabledFns),
-                escapeshellarg($tmpFile)
-            );
+            $entryName = 'index.php';
+            file_put_contents($tmpDir . $entryName, $code);
         }
+
+        // Write bootstrap file loaded via auto_prepend_file so line numbers in student code match original source
+        $bootFile = $tmpDir . '__sb_boot__.php';
+        file_put_contents($bootFile, $preamble);
+
+        $cmd = sprintf(
+            'cd %s && %s -d memory_limit=%s -d max_execution_time=%d -d disable_functions=%s -d display_errors=stderr -d auto_prepend_file=%s %s',
+            escapeshellarg($tmpDir),
+            escapeshellarg($php),
+            escapeshellarg($memLimit),
+            $maxTime,
+            escapeshellarg($disabledFns),
+            escapeshellarg($bootFile),
+            escapeshellarg($entryName)
+        );
 
         $startTime = microtime(true);
         $process = proc_open($cmd, [
@@ -265,12 +260,14 @@ class SandboxService {
             $errors = 'Failed to start PHP process.';
         }
 
+        // Clean error messages: strip temporary directory paths and internal bootstrap references
+        $errors = $this->sanitizeOutputErrors($errors, $tmpDir);
+        $output = $this->sanitizeOutputErrors($output, $tmpDir);
+
         // Cleanup temp files
         if ($tmpDir) {
             array_map('unlink', glob($tmpDir . '*'));
             @rmdir($tmpDir);
-        } else {
-            @unlink($tmpFile ?? '');
         }
 
         $executionTimeMs = (int) round((microtime(true) - $startTime) * 1000);
@@ -287,6 +284,40 @@ class SandboxService {
 
         $this->updateState($user, $contextType, $contextId, $result);
         return $result;
+    }
+
+    /**
+     * Sanitize output/errors to remove internal temporary directory paths and internal bootstrap wrappers.
+     */
+    private function sanitizeOutputErrors(string $text, string $tmpDir = ''): string
+    {
+        if (trim($text) === '') {
+            return $text;
+        }
+
+        // If specific tmpDir provided, strip it and its realpath
+        if ($tmpDir !== '') {
+            $realTmpDir = realpath($tmpDir) ?: $tmpDir;
+            $tmpDirNorm = rtrim($tmpDir, '/') . '/';
+            $realTmpDirNorm = rtrim($realTmpDir, '/') . '/';
+            $text = str_replace([$realTmpDirNorm, $tmpDirNorm], '', $text);
+        }
+
+        // Strip any remaining /tmp/phpsandbox_xxx/ or /private/var/folders/.../phpsandbox_xxx/ paths
+        $text = preg_replace('#/(?:private/var/folders/[^\s/]+/[^\s/]+/[^\s/]+/|tmp/)?phpsandbox_[a-zA-Z0-9_]+/#', '', $text);
+        $text = preg_replace('#/tmp/sandbox_exec/[^/]+/[^/]+/#', '', $text);
+
+        // Strip internal bootstrap/runner filenames if referenced in traces or warnings
+        $lines = explode("\n", $text);
+        $filtered = [];
+        foreach ($lines as $line) {
+            if (str_contains($line, '__sb_boot__.php') || str_contains($line, '__sb_run__.php') || str_contains($line, '__sb_foot__.php')) {
+                continue;
+            }
+            $filtered[] = $line;
+        }
+
+        return trim(implode("\n", $filtered));
     }
 
     private function updateState(User $user, string $contextType, ?int $contextId, array $result): void {
