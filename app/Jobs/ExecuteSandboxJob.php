@@ -63,4 +63,17 @@ class ExecuteSandboxJob implements ShouldQueue {
             ]);
         }
     }
+
+    /**
+     * Handle job failure when queue worker timeout or unexpected termination occurs.
+     */
+    public function failed(?\Throwable $exception): void {
+        Log::error("ExecuteSandboxJob permanently failed for submission #{$this->submission->id}: " . ($exception?->getMessage() ?? 'Unknown queue failure'));
+        try {
+            $this->submission->update([
+                'execution_status' => 'timeout',
+                'output_errors' => 'Tác vụ đã bị ngắt do quá thời gian chờ trong hàng đợi (' . ($exception?->getMessage() ?? 'Timeout') . ').',
+            ]);
+        } catch (\Exception $e) {}
+    }
 }

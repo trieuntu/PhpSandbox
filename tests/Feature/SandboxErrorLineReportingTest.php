@@ -88,4 +88,34 @@ class SandboxErrorLineReportingTest extends TestCase
         $this->assertStringContainsString('HELLO_SANDBOX_SUCCESS', $result['output']);
         $this->assertEmpty($result['errors']);
     }
+
+    public function test_infinite_loop_triggers_timeout_gracefully(): void
+    {
+        $user = User::factory()->create(['role' => 'student']);
+        $service = app(SandboxService::class);
+
+        // Configure a short timeout of 1 second for this test
+        config(['sandbox.max_execution_time' => 1]);
+
+        $code = "<?php while(true) {}";
+
+        $result = $service->executeWithPost($user, $code, [], 'free', null);
+
+        $this->assertContains($result['status'], ['timeout', 'error']);
+        $this->assertNotEmpty($result['errors']);
+    }
+
+    public function test_large_output_does_not_deadlock(): void
+    {
+        $user = User::factory()->create(['role' => 'student']);
+        $service = app(SandboxService::class);
+
+        // Generate 100k bytes of stderr and stdout
+        $code = "<?php fwrite(STDERR, str_repeat('E', 100000)); echo str_repeat('O', 10000);";
+
+        $result = $service->executeWithPost($user, $code, [], 'free', null);
+
+        $this->assertContains($result['status'], ['success', 'error']);
+        $this->assertNotEmpty($result['output']);
+    }
 }

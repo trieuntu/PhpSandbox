@@ -62,6 +62,17 @@ class SandboxController extends Controller {
             ->where('user_id', $user->id)
             ->firstOrFail();
 
+        // Self-healing guard: if job is stuck in running/pending for > 25s, mark as timeout
+        if (in_array($submission->execution_status, ['running', 'pending', 'queued'])) {
+            $startTime = $submission->submitted_at ?? $submission->created_at;
+            if ($startTime && $startTime->diffInSeconds(now()) >= 25) {
+                $submission->update([
+                    'execution_status' => 'timeout',
+                    'output_errors'    => 'Quá thời gian thực thi (hệ thống đã tự động hủy sau 25s do hàng đợi không phản hồi).',
+                ]);
+            }
+        }
+
         return response()->json([
             'status'           => $submission->execution_status,
             'submission_id'    => $submission->id,

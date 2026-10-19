@@ -247,14 +247,57 @@ class SandboxService {
         $output = '';
         $errors = '';
         $status = 'success';
+        $timedOut = false;
 
         if (is_resource($process)) {
             fclose($pipes[0]);
-            $output = stream_get_contents($pipes[1]);
-            $errors = stream_get_contents($pipes[2]);
+
+            // Non-blocking streams to prevent 64KB pipe buffer deadlock
+            stream_set_blocking($pipes[1], false);
+            stream_set_blocking($pipes[2], false);
+
+            $deadline = microtime(true) + $maxTime + 1; // 1s grace period before hard SIGKILL
+
+            while (true) {
+                $procStatus = proc_get_status($process);
+                if (!$procStatus['running']) {
+                    $output .= stream_get_contents($pipes[1]);
+                    $errors .= stream_get_contents($pipes[2]);
+                    break;
+                }
+
+                if (microtime(true) > $deadline) {
+                    proc_terminate($process, 9); // Force kill hung/infinite-loop process
+                    $timedOut = true;
+                    $status = 'timeout';
+                    $errors .= "Thời gian thực thi vượt quá giới hạn ({$maxTime}s).\n";
+                    break;
+                }
+
+                $output .= stream_get_contents($pipes[1]);
+                $errors .= stream_get_contents($pipes[2]);
+
+                // Guard against excessive output memory exhaustion (max 2MB)
+                if (strlen($output) > 2 * 1024 * 1024) {
+                    proc_terminate($process, 9);
+                    $output = substr($output, 0, 2 * 1024 * 1024) . "\n[Dữ liệu vượt quá giới hạn 2MB - đã ngắt]";
+                    $status = 'error';
+                    $errors .= "Dung lượng dữ liệu xuất vượt quá giới hạn cho phép (2MB).\n";
+                    break;
+                }
+
+                usleep(30000); // 30ms sleep between polls
+            }
+
             fclose($pipes[1]);
             fclose($pipes[2]);
-            if (proc_close($process) !== 0) $status = 'error';
+            $exitCode = proc_close($process);
+
+            if ($timedOut) {
+                $status = 'timeout';
+            } elseif ($status === 'success' && $exitCode !== 0) {
+                $status = 'error';
+            }
         } else {
             $status = 'error';
             $errors = 'Failed to start PHP process.';
