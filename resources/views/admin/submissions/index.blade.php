@@ -77,6 +77,7 @@
                 <th class="text-left px-4 py-3 font-semibold text-gray-700">Thời gian làm bài</th>
                 <th class="text-left px-4 py-3 font-semibold text-gray-700">Nộp bài lúc</th>
                 <th class="text-left px-4 py-3 font-semibold text-gray-700">Trạng thái code</th>
+                <th class="text-center px-4 py-3 font-semibold text-gray-700">Điểm số</th>
                 <th class="text-center px-4 py-3 font-semibold text-gray-700">Hành động</th>
             </tr>
         </thead>
@@ -127,6 +128,24 @@
                     @endif
                 </td>
                 <td class="px-4 py-3 text-center">
+                    @if($attempt->score !== null)
+                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold bg-blue-100 text-blue-800 border border-blue-200">
+                            {{ number_format($attempt->score, 2) }} đ
+                        </span>
+                        @if($attempt->graded_at)
+                            <p class="text-[10px] text-gray-400 mt-0.5">{{ $attempt->graded_at->format('d/m H:i') }}</p>
+                        @endif
+                    @elseif($attempt->latest_submission && $attempt->latest_submission->score !== null)
+                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold bg-blue-100 text-blue-800 border border-blue-200">
+                            {{ number_format($attempt->latest_submission->score, 2) }} đ
+                        </span>
+                    @else
+                        <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-gray-100 text-gray-500">
+                            Chưa chấm
+                        </span>
+                    @endif
+                </td>
+                <td class="px-4 py-3 text-center">
                     @if($attempt->latest_submission)
                     <div class="flex items-center justify-center gap-2">
                         <a href="{{ route('admin.submissions.show', $attempt->latest_submission->id) }}"
@@ -147,7 +166,7 @@
             </tr>
             @empty
             <tr>
-                <td colspan="6" class="px-4 py-12 text-center text-gray-400">
+                <td colspan="7" class="px-4 py-12 text-center text-gray-400">
                     <svg class="w-10 h-10 mx-auto mb-2 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
                     <p class="font-medium text-gray-600">Chưa có sinh viên nào nộp bài thi thành công</p>
                     <p class="text-xs text-gray-400 mt-1">Khi sinh viên hoàn thành bài thi và nhấn nút "Nộp bài", danh sách sẽ hiển thị tại đây để chấm điểm.</p>
@@ -216,6 +235,7 @@
                 <th class="text-left px-4 py-3 font-semibold text-gray-700">Bài tập / Kỳ thi</th>
                 <th class="text-left px-4 py-3 font-semibold text-gray-700">Lớp</th>
                 <th class="text-left px-4 py-3 font-semibold text-gray-700">Trạng thái</th>
+                <th class="text-center px-4 py-3 font-semibold text-gray-700">Điểm số</th>
                 <th class="text-left px-4 py-3 font-semibold text-gray-700">T/G thực thi</th>
                 <th class="text-left px-4 py-3 font-semibold text-gray-700">Thời gian chạy</th>
                 <th class="text-center px-4 py-3 font-semibold text-gray-700">Hành động</th>
@@ -247,6 +267,15 @@
                         {{ $sub->execution_status }}
                     </span>
                 </td>
+                <td class="px-4 py-3 text-center">
+                    @if($sub->score !== null)
+                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold bg-blue-100 text-blue-800">
+                            {{ number_format($sub->score, 2) }} đ
+                        </span>
+                    @else
+                        <span class="text-xs text-gray-400">—</span>
+                    @endif
+                </td>
                 <td class="px-4 py-3 text-gray-600 text-xs font-mono">
                     {{ $sub->execution_time_ms ? $sub->execution_time_ms . 'ms' : '—' }}
                 </td>
@@ -259,7 +288,7 @@
             </tr>
             @empty
             <tr>
-                <td colspan="7" class="px-4 py-10 text-center text-gray-400">Không có submission nào phù hợp</td>
+                <td colspan="8" class="px-4 py-10 text-center text-gray-400">Không có submission nào phù hợp</td>
             </tr>
             @endforelse
         </tbody>

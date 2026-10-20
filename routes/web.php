@@ -106,10 +106,12 @@ Route::prefix('admin')->name('admin.')->middleware(['auth', 'admin'])->group(fun
     Route::put('/exams/{exam}', [AdminExamController::class, 'update'])->name('exams.update');
     Route::delete('/exams/{exam}', [AdminExamController::class, 'destroy'])->name('exams.destroy');
     Route::patch('/exams/{exam}/toggle', [AdminExamController::class, 'toggle'])->name('exams.toggle');
+    Route::get('/exams/{exam}/export-grades', [AdminExamController::class, 'exportGrades'])->name('exams.export-grades');
 
     // Submissions
     Route::get('/submissions', [SubmissionController::class, 'index'])->name('submissions.index');
     Route::get('/submissions/{submission}', [SubmissionController::class, 'show'])->name('submissions.show');
+    Route::post('/submissions/{submission}/grade', [SubmissionController::class, 'grade'])->name('submissions.grade');
     Route::post('/submissions/{submission}/rerun', [SubmissionController::class, 'rerun'])->name('submissions.rerun');
     Route::get('/submissions/{submission}/download', [SubmissionController::class, 'download'])->name('submissions.download');
     Route::get('/submissions/{submission}/download-output', [SubmissionController::class, 'downloadOutput'])->name('submissions.download-output');

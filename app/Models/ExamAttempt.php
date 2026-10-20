@@ -5,11 +5,21 @@ use Illuminate\Database\Eloquent\Model;
 
 class ExamAttempt extends Model {
     public $timestamps = false;
-    protected $fillable = ['exam_id', 'user_id', 'started_at', 'submitted_at', 'expires_at'];
-    protected $casts = ['started_at' => 'datetime', 'submitted_at' => 'datetime', 'expires_at' => 'datetime'];
+    protected $fillable = [
+        'exam_id', 'user_id', 'started_at', 'submitted_at', 'expires_at',
+        'score', 'teacher_feedback', 'graded_at', 'graded_by',
+    ];
+    protected $casts = [
+        'started_at' => 'datetime',
+        'submitted_at' => 'datetime',
+        'expires_at' => 'datetime',
+        'graded_at' => 'datetime',
+        'score' => 'float',
+    ];
 
     public function exam() { return $this->belongsTo(Exam::class); }
     public function user() { return $this->belongsTo(User::class); }
+    public function grader() { return $this->belongsTo(User::class, 'graded_by'); }
 
     public function isExpired(): bool {
         return $this->expires_at && $this->expires_at->isPast();

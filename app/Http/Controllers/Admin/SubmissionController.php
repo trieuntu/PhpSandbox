@@ -112,8 +112,47 @@ class SubmissionController extends Controller {
     }
     
     public function show(Submission $submission) {
-        $submission->load('user', 'assignment', 'exam');
+        $submission->load('user', 'assignment', 'exam', 'grader');
         return view('admin.submissions.show', compact('submission'));
+    }
+
+    public function grade(Request $request, Submission $submission) {
+        $validated = $request->validate([
+            'score' => 'nullable|numeric|min:0|max:100',
+            'teacher_feedback' => 'nullable|string|max:5000',
+        ], [
+            'score.numeric' => 'Điểm số phải là định dạng số.',
+            'score.min' => 'Điểm số không được nhỏ hơn 0.',
+            'score.max' => 'Điểm số không được lớn hơn 100.',
+            'teacher_feedback.max' => 'Nhận xét không được vượt quá 5000 ký tự.',
+        ]);
+
+        $score = ($validated['score'] !== null && $validated['score'] !== '')
+            ? round((float)$validated['score'], 2)
+            : null;
+        $feedback = $validated['teacher_feedback'] ?? null;
+        $isGraded = ($score !== null || !empty(trim((string)$feedback)));
+
+        $submission->update([
+            'score' => $score,
+            'teacher_feedback' => $feedback,
+            'graded_at' => $isGraded ? now() : null,
+            'graded_by' => $isGraded ? \Illuminate\Support\Facades\Auth::id() : null,
+        ]);
+
+        // Sync with ExamAttempt if this submission belongs to an exam
+        if ($submission->exam_id && $submission->user_id) {
+            ExamAttempt::where('exam_id', $submission->exam_id)
+                ->where('user_id', $submission->user_id)
+                ->update([
+                    'score' => $score,
+                    'teacher_feedback' => $feedback,
+                    'graded_at' => $isGraded ? now() : null,
+                    'graded_by' => $isGraded ? \Illuminate\Support\Facades\Auth::id() : null,
+                ]);
+        }
+
+        return back()->with('success', 'Đã lưu điểm và nhận xét cho bài làm thành công.');
     }
 
     public function rerun(Submission $submission, SandboxService $sandboxService) {

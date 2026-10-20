@@ -8,12 +8,22 @@
             <h1 class="text-2xl font-bold text-gray-800">{{ $exam->title }}</h1>
             <p class="text-gray-500 text-sm">{{ $exam->class->name }}</p>
         </div>
+    <div class="flex items-center gap-2 mt-2 sm:mt-0">
+        <a href="{{ route('admin.exams.export-grades', $exam) }}"
+           class="inline-flex items-center gap-1.5 bg-green-600 hover:bg-green-700 text-white px-3.5 py-2 rounded-lg text-sm font-medium shadow-sm transition">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+            Tải báo cáo điểm (CSV)
+        </a>
         <a href="{{ route('admin.exams.edit', $exam) }}"
-           class="border border-gray-300 text-gray-700 px-4 py-2 rounded text-sm hover:bg-gray-50">
+           class="border border-gray-300 text-gray-700 px-3.5 py-2 rounded-lg text-sm font-medium hover:bg-gray-50 transition">
             ✏️ Sửa kỳ thi
         </a>
     </div>
 </div>
+
+@php
+    $gradedCount = $submittedAttempts->filter(fn($a) => ($a->latest_submission?->score ?? $a->score) !== null)->count();
+@endphp
 
 <!-- Exam Info Grid -->
 <div class="grid grid-cols-4 gap-4 mb-6">
@@ -30,8 +40,11 @@
         <p class="font-medium text-orange-600 mt-1 text-sm">{{ $exam->time_limit_minutes ? $exam->time_limit_minutes . ' phút' : 'Không giới hạn' }}</p>
     </div>
     <div class="bg-white border border-gray-200 rounded-lg p-4">
-        <p class="text-xs text-gray-500 uppercase">Đã nộp bài</p>
-        <p class="font-bold text-2xl text-green-600 mt-1">{{ $submittedAttempts->count() }} <span class="text-xs text-gray-400 font-normal">sinh viên</span></p>
+        <p class="text-xs text-gray-500 uppercase">Đã nộp / Đã chấm</p>
+        <p class="font-bold text-2xl text-green-600 mt-1">
+            {{ $submittedAttempts->count() }} 
+            <span class="text-xs text-blue-600 font-medium font-sans">({{ $gradedCount }} đã chấm)</span>
+        </p>
     </div>
 </div>
 
@@ -52,8 +65,15 @@
             </h2>
             <p class="text-xs text-gray-500 mt-0.5">Những sinh viên đã nhấn nút nộp bài để giáo viên chấm điểm</p>
         </div>
-        <a href="{{ route('admin.submissions.index', ['tab' => 'submitted', 'exam_id' => $exam->id]) }}"
-           class="text-xs text-blue-600 hover:underline font-medium">Xem trong Bài làm &rarr;</a>
+        <div class="flex items-center gap-3">
+            <a href="{{ route('admin.exams.export-grades', $exam) }}" class="text-xs text-green-700 hover:text-green-800 font-semibold inline-flex items-center gap-1">
+                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+                Tải bảng điểm CSV
+            </a>
+            <span class="text-gray-300">&bull;</span>
+            <a href="{{ route('admin.submissions.index', ['tab' => 'submitted', 'exam_id' => $exam->id]) }}"
+               class="text-xs text-blue-600 hover:underline font-medium">Xem trong Bài làm &rarr;</a>
+        </div>
     </div>
     <table class="w-full text-sm">
         <thead class="bg-gray-50 border-b border-gray-200">
@@ -62,6 +82,7 @@
                 <th class="text-left px-4 py-2.5 font-medium text-gray-600">Thời gian làm bài</th>
                 <th class="text-left px-4 py-2.5 font-medium text-gray-600">Nộp bài lúc</th>
                 <th class="text-left px-4 py-2.5 font-medium text-gray-600">Trạng thái code</th>
+                <th class="text-center px-4 py-2.5 font-medium text-gray-600">Điểm số</th>
                 <th class="text-center px-4 py-2.5 font-medium text-gray-600">Hành động</th>
             </tr>
         </thead>
@@ -102,6 +123,20 @@
                     @endif
                 </td>
                 <td class="px-4 py-3 text-center">
+                    @php
+                        $score = $attempt->latest_submission?->score ?? $attempt->score;
+                    @endphp
+                    @if($score !== null)
+                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold bg-green-100 text-green-800 border border-green-200 shadow-xs">
+                            {{ number_format($score, 2) }} đ
+                        </span>
+                    @else
+                        <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-amber-50 text-amber-700 border border-amber-200">
+                            Chưa chấm
+                        </span>
+                    @endif
+                </td>
+                <td class="px-4 py-3 text-center">
                     @if($attempt->latest_submission)
                         <a href="{{ route('admin.submissions.show', $attempt->latest_submission->id) }}"
                            class="inline-flex items-center gap-1 bg-blue-600 hover:bg-blue-700 text-white text-xs px-3 py-1.5 rounded-lg font-medium shadow-sm transition">
@@ -115,7 +150,7 @@
             </tr>
             @empty
             <tr>
-                <td colspan="5" class="px-4 py-8 text-center text-gray-400">
+                <td colspan="6" class="px-4 py-8 text-center text-gray-400">
                     Chưa có sinh viên nào nhấn nộp bài cho kỳ thi này
                 </td>
             </tr>

@@ -5,6 +5,9 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use App\Models\Exam;
 use App\Models\Classes;
+use App\Models\ExamAttempt;
+use App\Models\Submission;
+use Illuminate\Support\Str;
 use App\Support\HtmlSanitizer;
 
 class ExamController extends Controller {
@@ -110,5 +113,137 @@ class ExamController extends Controller {
         $exam->update(['is_active' => !$exam->is_active]);
         $state = $exam->is_active ? 'kích hoạt' : 'ẩn';
         return back()->with('success', "Kỳ thi \"{$exam->title}\" đã được {$state}.");
+    }
+
+    /**
+     * Download grade report for the given exam as a UTF-8 BOM CSV file.
+     */
+    public function exportGrades(Exam $exam) {
+        $exam->load('class.students');
+
+        // All attempts for this exam
+        $attempts = ExamAttempt::with('user', 'grader')
+            ->where('exam_id', $exam->id)
+            ->get()
+            ->keyBy('user_id');
+
+        // Latest submission for each student in this exam
+        $latestSubmissions = Submission::with('grader')
+            ->where('exam_id', $exam->id)
+            ->orderByDesc('submitted_at')
+            ->get()
+            ->groupBy('user_id')
+            ->map(fn($g) => $g->first());
+
+        // All enrolled students in class
+        $enrolledStudents = $exam->class
+            ? $exam->class->students()->where('role', 'student')->get()
+            : collect();
+
+        // Merge users: all enrolled + any student who took the exam
+        $allUsers = $enrolledStudents->keyBy('id');
+        foreach ($attempts as $userId => $attempt) {
+            if (!$allUsers->has($userId) && $attempt->user) {
+                $allUsers->put($userId, $attempt->user);
+            }
+        }
+
+        // Sort by student_id or name
+        $sortedUsers = $allUsers->sort(function ($a, $b) {
+            if ($a->student_id && $b->student_id) {
+                return strcmp($a->student_id, $b->student_id);
+            }
+            return strcmp($a->name ?? '', $b->name ?? '');
+        });
+
+        $fileName = 'bang_diem_' . Str::slug($exam->title, '_') . '_' . date('Ymd_His') . '.csv';
+
+        $headers = [
+            'Content-Type' => 'text/csv; charset=UTF-8',
+            'Content-Disposition' => "attachment; filename=\"{$fileName}\"",
+            'Pragma' => 'no-cache',
+            'Cache-Control' => 'must-revalidate, post-check=0, pre-check=0',
+            'Expires' => '0',
+        ];
+
+        return response()->stream(function () use ($sortedUsers, $attempts, $latestSubmissions, $exam) {
+            $handle = fopen('php://output', 'w');
+
+            // UTF-8 BOM for Microsoft Excel compatibility
+            fwrite($handle, "\xEF\xBB\xBF");
+
+            // Header row
+            fputcsv($handle, [
+                'STT',
+                'Mã sinh viên',
+                'Họ và tên đệm',
+                'Tên',
+                'Họ và tên đầy đủ',
+                'Email',
+                'Lớp',
+                'Kỳ thi',
+                'Bắt đầu thi',
+                'Nộp bài lúc',
+                'Thời lượng',
+                'Trạng thái nộp',
+                'Điểm số',
+                'Trạng thái chấm',
+                'Nhận xét của giáo viên',
+                'Người chấm',
+                'Thời gian chấm',
+            ]);
+
+            $stt = 1;
+            foreach ($sortedUsers as $user) {
+                $attempt = $attempts->get($user->id);
+                $latestSub = $latestSubmissions->get($user->id);
+
+                // Determine submission status
+                if ($attempt && $attempt->submitted_at) {
+                    $statusText = 'Đã nộp bài';
+                } elseif ($attempt && $attempt->started_at) {
+                    $statusText = 'Chưa nộp bài (đang làm / hết giờ)';
+                } else {
+                    $statusText = 'Vắng thi';
+                }
+
+                // Determine score
+                $score = null;
+                if ($latestSub && $latestSub->score !== null) {
+                    $score = $latestSub->score;
+                } elseif ($attempt && $attempt->score !== null) {
+                    $score = $attempt->score;
+                }
+
+                $scoreDisplay = $score !== null ? (string)$score : '';
+                $gradeStatus = $score !== null ? 'Đã chấm' : ($attempt && $attempt->submitted_at ? 'Chưa chấm' : '—');
+
+                $feedback = $latestSub?->teacher_feedback ?? $attempt?->teacher_feedback ?? '';
+                $gradedBy = $latestSub?->grader?->name ?? $attempt?->grader?->name ?? '';
+                $gradedAt = $latestSub?->graded_at ? $latestSub->graded_at->format('d/m/Y H:i:s') : ($attempt?->graded_at ? $attempt->graded_at->format('d/m/Y H:i:s') : '');
+
+                fputcsv($handle, [
+                    $stt++,
+                    $user->student_id ?? '',
+                    $user->last_name ?? '',
+                    $user->first_name ?? '',
+                    $user->name ?? '',
+                    $user->email ?? '',
+                    $exam->class?->name ?? $user->class_name ?? '',
+                    $exam->title,
+                    $attempt?->started_at ? $attempt->started_at->format('d/m/Y H:i:s') : '',
+                    $attempt?->submitted_at ? $attempt->submitted_at->format('d/m/Y H:i:s') : '',
+                    $attempt ? $attempt->durationFormatted() : '',
+                    $statusText,
+                    $scoreDisplay,
+                    $gradeStatus,
+                    $feedback,
+                    $gradedBy,
+                    $gradedAt,
+                ]);
+            }
+
+            fclose($handle);
+        }, 200, $headers);
     }
 }
